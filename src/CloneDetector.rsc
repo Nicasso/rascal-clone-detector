@@ -26,13 +26,25 @@ public void main() {
 	
 	visit (ast) {
 		case Declaration x: {
-			iprintln(calculateMass(x));
+			iprintln("Mass: <calculateMass(x)>");
 			if (calculateMass(x) >= massThreshold) {
-				//iprintln(x);
-				int a;
+				int occurrences = findSubTrees(ast, x);
+				iprintln("Occurrences: <occurrences>");
 			}
 		}
 	}
+}
+
+public int findSubTrees(set[Declaration] ast, Declaration dec) {
+	int occurrences = 0;
+	top-down visit (ast) {
+		case Declaration x: {
+			if (x == dec) {
+				occurrences += 1;
+			}
+		}
+	}
+	return occurrences;
 }
 
 public int calculateMass(Declaration currentNode) {

@@ -18,8 +18,8 @@ import DateTime;
 
 public loc currentProject = |project://TestProject|;
 
-map[node,list[node]] buckets = ();
-lrel[node,node] clonePairs = [];
+map[node,lrel[node,loc]] buckets = ();
+lrel[tuple[node,loc],tuple[node,loc]] clonePairs = [];
 
 public void main() {
 	iprintln("Lets Begin!");
@@ -28,7 +28,7 @@ public void main() {
 	
 	set[Declaration] ast = createAstsFromEclipseProject(currentProject, true);
 		
-	int massThreshold = 5;
+	int massThreshold = 8;
 	real similarityThreshold = 0.5;
 	
 	visit (ast) {
@@ -44,14 +44,18 @@ public void main() {
 	
 	for (bucket <- buckets) {
 		if (size(buckets[bucket]) >= 2) {
-			lrel[node,node] complementBucket = [];
+			lrel[tuple[node,loc] L, tuple[node,loc] R] complementBucket = [];
 			complementBucket += buckets[bucket] * buckets[bucket];
 			
-			//iprintln([ <x,y> | <x,y> <- complementBucket, x != y]);
+			iprintln(size(complementBucket));
 			
+			complementBucket = [p | p <- complementBucket, p.L != p.R];
+			
+			iprintln(size(complementBucket));
+									
 			for (treeRelation <- complementBucket) {
 				//iprintln(treeRelation);
-				int similarity = calculateSimilarity(treeRelation[0], treeRelation[1]);
+				int similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0]);
 				//iprintln(similarity);
 				if (similarity > similarityThreshold) {
 					
@@ -72,6 +76,7 @@ public void main() {
 			}
 		}
 	}
+	//iprintln(clonePairs);
 }
 
 public void isMemberOfClones(node target) {
@@ -110,10 +115,24 @@ public int calculateSimilarity(node t1, node t2) {
 }
 
 public void addSubTreeToMap(node subTree) {
-	if (buckets[subTree]?) {
-		buckets[subTree] += subTree;
+
+	loc location;
+	if (Declaration d := subTree) { 
+		location = d@src;
+	} else if (Expression e := subTree) {
+		location = e@src;
+	} else if (Statement s := subTree) {
+		location = s@src;
 	} else {
-		buckets[subTree] = [subTree];
+		iprintln("WTF GEEN LOCATION?!");
+	}
+	
+	//iprintln(location);
+
+	if (buckets[subTree]?) {
+		buckets[subTree] += <subTree,location>;
+	} else {
+		buckets[subTree] = [<subTree,location>];
 	}
 }
 

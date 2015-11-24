@@ -24,6 +24,9 @@ lrel[tuple[node,loc],tuple[node,loc]] clonePairs = [];
 public void main() {
 	iprintln("Lets Begin!");
 	
+	buckets = ();
+	clonePairs = [];
+	
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
 	set[Declaration] ast = createAstsFromEclipseProject(currentProject, true);
@@ -47,11 +50,11 @@ public void main() {
 			lrel[tuple[node,loc] L, tuple[node,loc] R] complementBucket = [];
 			complementBucket += buckets[bucket] * buckets[bucket];
 			
-			iprintln(size(complementBucket));
+			//iprintln(size(complementBucket));
 			
 			complementBucket = [p | p <- complementBucket, p.L != p.R];
 			
-			iprintln(size(complementBucket));
+			//iprintln(size(complementBucket));
 									
 			for (treeRelation <- complementBucket) {
 				//iprintln(treeRelation);

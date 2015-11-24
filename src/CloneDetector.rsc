@@ -17,7 +17,7 @@ import DateTime;
 
 public loc currentProject = |project://TestProject|;
 
-map[node,list[node]] bucket = ();
+map[node,list[node]] buckets = ();
 
 public void main() {
 	iprintln("Lets Begin!");
@@ -39,9 +39,9 @@ public void main() {
 		}
 	}
 	
-	for (buck <- bucket) {
-		if (size(bucket[buck]) >= 2) {
-			iprintln(bucket[buck]);
+	for (buck <- buckets) {
+		if (size(buckets[buck]) >= 2) {
+			iprintln(buckets[buck]);
 			calculateSimilarity(buck, buck);
 		}
 	}
@@ -71,10 +71,10 @@ public int calculateSimilarity(node t1, node t2) {
 }
 
 public void addSubTreeToMap(node subTree) {
-	if (bucket[subTree]?) {
-		bucket[subTree] += subTree;
+	if (buckets[subTree]?) {
+		buckets[subTree] += subTree;
 	} else {
-		bucket[subTree] = [subTree];
+		buckets[subTree] = [subTree];
 	}
 }
 

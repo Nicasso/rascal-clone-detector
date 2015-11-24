@@ -8,6 +8,7 @@ import demo::common::Crawl;
 import IO;
 import List;
 import Tuple;
+import Type;
 import String;
 import Relation;
 import util::Math;
@@ -25,7 +26,7 @@ public void main() {
 	int massThreshold = 3;
 	
 	visit (ast) {
-		case Declaration x: {
+		case node x: {
 			iprintln("Mass: <calculateMass(x)>");
 			if (calculateMass(x) >= massThreshold) {
 				int occurrences = findSubTrees(ast, x);
@@ -35,10 +36,10 @@ public void main() {
 	}
 }
 
-public int findSubTrees(set[Declaration] ast, Declaration dec) {
+public int findSubTrees(set[Declaration] ast, node dec) {
 	int occurrences = 0;
 	top-down visit (ast) {
-		case Declaration x: {
+		case node x: {
 			if (x == dec) {
 				occurrences += 1;
 			}
@@ -47,10 +48,10 @@ public int findSubTrees(set[Declaration] ast, Declaration dec) {
 	return occurrences;
 }
 
-public int calculateMass(Declaration currentNode) {
+public int calculateMass(node currentNode) {
 	int mass = 0;
 	visit (currentNode) {
-		case _: {
+		case node x: {
 			mass += 1;
 		}
 	}

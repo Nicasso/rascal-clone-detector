@@ -7,6 +7,7 @@ import lang::java::jdt::m3::AST;
 import demo::common::Crawl;
 import IO;
 import List;
+import Map;
 import Tuple;
 import Type;
 import String;
@@ -16,6 +17,8 @@ import DateTime;
 
 public loc currentProject = |project://TestProject|;
 
+map[node,list[node]] bucket = ();
+
 public void main() {
 	iprintln("Lets Begin!");
 	
@@ -23,16 +26,55 @@ public void main() {
 	
 	set[Declaration] ast = createAstsFromEclipseProject(currentProject, true);
 		
-	int massThreshold = 3;
+	int massThreshold = 5;
 	
 	visit (ast) {
 		case node x: {
-			iprintln("Mass: <calculateMass(x)>");
+			//iprintln("Mass: <calculateMass(x)>");
 			if (calculateMass(x) >= massThreshold) {
-				int occurrences = findSubTrees(ast, x);
-				iprintln("Occurrences: <occurrences>");
+				//int occurrences = findSubTrees(ast, x);
+				//iprintln("Occurrences: <occurrences>");
+				addSubTreeToMap(x);
 			}
 		}
+	}
+	
+	for (buck <- bucket) {
+		if (size(bucket[buck]) >= 2) {
+			iprintln(bucket[buck]);
+			calculateSimilarity(buck, buck);
+		}
+	}
+}
+
+public int calculateSimilarity(node t1, node t2) {
+	//Similarity = 2 x S / (2 x S + L + R)
+	
+	map[node,int] tree1 = ();
+	map[node,int] tree2 = ();
+	
+	visit (t1) {
+		case node x: {
+			tree1[x] = 1;
+		}
+	}
+	
+	visit (t2) {
+		case node x: {
+			tree2[x] = 1;
+		}
+	}
+	
+	iprintln(tree1+tree2 == tree1);
+	
+	return 1;
+}
+
+public void addSubTreeToMap(node subTree) {
+	if (bucket[subTree]?) {
+		bucket[subTree] += subTree;
+	} else {
+		bucket[subTree] = [subTree];
 	}
 }
 

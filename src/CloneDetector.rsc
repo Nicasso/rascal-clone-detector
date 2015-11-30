@@ -80,19 +80,16 @@ public void main() {
 		}
 	}
 	
+	
+	// Remove one of the symmetric pairs (a,b) & (b,a) should result in only one of the two.
 	lrel[tuple[node,loc],tuple[node,loc]] newClonePairs = [];
-	newClonePairs = [<<x,y>,<z,q>> | <<x,y>,<z,q>> <- clonePairs, <<x,q>,<z,y>> notin newClonePairs];
-	
-	for (pair <- newClonePairs) {
-		iprintln(pair[0][1]);
-		iprintln(pair[1][1]);
-		iprintln("NEXT!");
+	for (pair <- clonePairs) {
+		tuple[tuple[node,loc],tuple[node,loc]] reversePair = <<pair[1][0],pair[1][1]>,<pair[0][0],pair[0][1]>>;
+		if (reversePair notin newClonePairs) {		
+			newClonePairs += pair;
+		}
+
 	}
-	
-	iprintln(size(clonePairs));
-	/*
-		
-	*/
 }
 
 public void isMemberOfClones(node target) {

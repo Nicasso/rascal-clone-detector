@@ -53,7 +53,7 @@ public void main() {
 			//iprintln(size(complementBucket));
 			
 			complementBucket = [p | p <- complementBucket, p.L != p.R];
-			
+						
 			//iprintln(size(complementBucket));
 									
 			for (treeRelation <- complementBucket) {
@@ -79,13 +79,26 @@ public void main() {
 			}
 		}
 	}
-	//iprintln(clonePairs);
+	
+	lrel[tuple[node,loc],tuple[node,loc]] newClonePairs = [];
+	newClonePairs = [<<x,y>,<z,q>> | <<x,y>,<z,q>> <- clonePairs, <<x,q>,<z,y>> notin newClonePairs];
+	
+	for (pair <- newClonePairs) {
+		iprintln(pair[0][1]);
+		iprintln(pair[1][1]);
+		iprintln("NEXT!");
+	}
+	
+	iprintln(size(clonePairs));
+	/*
+		
+	*/
 }
 
 public void isMemberOfClones(node target) {
 	for (relation <- clonePairs) {
 		if (target == relation[0] || target == relation[1]) {
-			clonePairs - relation;
+			clonePairs = clonePairs - relation;
 		} 
 	}
 }

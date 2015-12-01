@@ -20,29 +20,32 @@ import Traversal;
 public loc currentProject = |project://TestProject|;
 
 map[node,lrel[node,loc]] buckets = ();
+
+map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses = ();
+
 lrel[tuple[node,loc],tuple[node,loc]] clonePairs = [];
 lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
 set[Declaration] ast;
 
 public void main() {
-	iprintln("Lets Begin!");
+	iprintln("Attack of the clones!");
 	
 	buckets = ();
 	clonePairs = [];
-	
+	cloneClasses = ();
+
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
 	int massThreshold = 8;
 	real similarityThreshold = 0.75;
-		
+	
+	// Step 1. Finding Sub-tree Clones
+	
 	visit (ast) {
 		case node x: {
-			//iprintln("Mass: <calculateMass(x)>");
 			if (calculateMass(x) >= massThreshold) {
-				//int occurrences = findSubTrees(ast, x);
-				//iprintln("Occurrences: <occurrences>");
 				addSubTreeToMap(x);
 			}
 		}
@@ -52,44 +55,56 @@ public void main() {
 		if (size(buckets[bucket]) >= 2) {
 			lrel[tuple[node,loc] L, tuple[node,loc] R] complementBucket = [];
 			complementBucket += buckets[bucket] * buckets[bucket];
-			
+			// Removing reflective pairs
 			complementBucket = [p | p <- complementBucket, p.L != p.R];
-									
+			// Cleanup symmetric clones, they are useless.
+			complementBucket = removeSymmetricPairs(complementBucket);
+				
 			for (treeRelation <- complementBucket) {
-				//iprintln(treeRelation);
 				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0]);
-				//iprintln(similarity);
 				if (similarity > similarityThreshold) {
 					
-					visit (treeRelation[0]) {
-						case node x: {
-							isMemberOfClones(x);
-						}
-					}
-					
-					visit (treeRelation[1]) {
-						case node x: {
-							isMemberOfClones(x);
-						}
-					}
+					// Look for smaller clones within the trees and remove them.
+					// @TODO This is broken, it messes up the results.
+					// It will remove almosts ALL results...
+					checkForInnerClones(treeRelation[0]);
+					checkForInnerClones(treeRelation[1]);
 					
 					clonePairs += treeRelation;
+					
+					if (cloneClasses[treeRelation[0][0]]?) {
+						cloneClasses[treeRelation[0][0]] += treeRelation;
+					} else {
+						cloneClasses[treeRelation[0][0]] = [treeRelation];
+					}
 				}
 			}
 		}
 	}
 	
-	clonePairs = removeSymmetricPairs(clonePairs);
+	iprintln("Amount of clonepairs after step 1: <size(clonePairs)>");
+	
+	iprintln("Class sizes");
+	for (currentClass <- cloneClasses) {
+		iprintln(size(cloneClasses[currentClass]));
+		iprintln("--------------------------------------------------");
+	}
+	
+	printCloneResults();
+	
+	// Step 2. Finding Clone Sequences
 
-	// Generalizing clones
+	// Step 3. Generalizing clones
 	
 	clonesToGeneralize = clonePairs;
 	
-	for (currentClonePair <- clonesToGeneralize) {
+	while (currentClonePair <- clonesToGeneralize) {
 		clonesToGeneralize = clonesToGeneralize - currentClonePair;
 		
-		list[node] parents = getParentsOfClone(currentClonePair[0][0]);
+		//iprintln("Child");
+		//iprintln(currentClonePair[0][1]);
 		
+		list[node] parents = getParentsOfClone(currentClonePair[0][0]);		
 		// Dunno if this is required, but lets keep it for now just to be sure.
 		parents += getParentsOfClone(currentClonePair[1][0]);
 		parents = dup(parents);
@@ -99,29 +114,74 @@ public void main() {
 			loc parentLocation = getLocationOfNode(parent);
 			parentsPairs += <parent, parentLocation>;
 		}
+		
+		//iprintln(size(parentsPairs));
 				
 		lrel[tuple[node,loc] L, tuple[node,loc] R] complementParents = [];
 		complementParents += parentsPairs * parentsPairs;
-		
 		complementParents = [p | p <- complementParents, p.L != p.R];
 		complementParents = removeSymmetricPairs(complementParents);
 		
+		//iprintln("Amount of parent pairs: <size(complementParents)>");
+		
+		if (size(complementParents) == 0) {
+			//iprintln(parents);
+			int a;
+		}
+		
 		for (parentRelation <- complementParents) {
 			num similarity = calculateSimilarity(parentRelation[0][0],parentRelation[1][0]);
+			//iprintln("Parent simi <similarity>");
+			//iprintln(parentRelation[0][1]);
+			//iprintln(parentRelation[1][1]);
+			
 			if (similarity > similarityThreshold) {
+				//iprintln("So we found a parent which matches");
 				clonePairs = clonePairs - currentClonePair;
 				
 				clonePairs += parentRelation; 
 				clonesToGeneralize += parentRelation;
+			} else {
+				//iprintln("So we did not find a parent which matches");
+				int a;
 			}
 		}
+		//iprintln("End loop iteration");
+		//iprintln("----------------------------------");
 	}
-		
-	iprintln("CLONES");
+	
+	/*
+	for (clone <- clonePairs) {
+		checkForInnerClones(clone[0][0]);
+		checkForInnerClones(clone[1][0]);
+	}
+	*/
+	
+	printCloneResults();
+}
+
+public void printCloneResults() {
+	println();
+	iprintln("Final clone pairs");
 	for (pair <- clonePairs) {
 		iprintln(pair[0][1]);
 		iprintln(pair[1][1]);
-		iprintln("NEXT!");
+		iprintln("----------------------------------------------------------------------------------------");
+	}
+}
+
+public void checkForInnerClones(tuple[node,loc] tree) {
+	visit (tree[0]) {
+		case node x: {
+			if (x != tree[0]) {
+				//iprintln("WTF?!?!?!?!?!?!??!");
+				loc location = getLocationOfNode(x);
+				isMemberOfClones(x, location);
+			} else {
+				//iprintln("SAME");
+				int a;
+			}
+		}
 	}
 }
 
@@ -141,15 +201,24 @@ public list[node] getParentsOfClone(node current) {
 	
 	list[node] parents = [];
 	
+	//iprintln("Potential parents");
 	top-down visit (ast) {
 		case current: {
 			list[value] context = getTraversalContext();
 			
-			if (node x := context[2]) {
-				//iprintln("FOUND PARENT");
-				parents += x;
-			} 
-			//iprintln(getLocationOfValue(context[2]));
+			int i = 1;
+			bool added = false;
+			while (i <= size(context) && added == false) {
+				value potentialParent = context[i];
+				
+				if (node x := potentialParent) {
+					//iprintln("FOUND PARENT");
+					//iprintln(getLocationOfNode(potentialParent));
+					parents += x;
+					added = true;
+				} 
+				i += 1;
+			}
 			//iprintln("NEXT");
 			//iprintln("--------------------------------------------------------------------------------------");
 		}
@@ -158,11 +227,17 @@ public list[node] getParentsOfClone(node current) {
 	return parents;
 }
 
-public void isMemberOfClones(node target) {
+public void isMemberOfClones(node target, loc location) {
+	tuple[node,loc] current = <target,location>;
+	
 	for (relation <- clonePairs) {
-		if (target == relation[0] || target == relation[1]) {
-			clonePairs = clonePairs - relation;
-		} 
+		if (current == relation[0] || current == relation[1]) {
+			if(size(cloneClasses[target]) == 1) {
+				clonePairs = clonePairs - relation;
+				cloneClasses = delete(cloneClasses, target);   
+			}
+			
+		}
 	}
 }
 
@@ -203,7 +278,7 @@ public loc getLocationOfNode(node subTree) {
 	} else if (Statement s := subTree) {
 		location = s@src;
 	} else {
-		iprintln("WTF GEEN LOCATION?!");
+		iprintln("WTF NO LOCATION?!");
 	}
 	
 	return location;
@@ -212,8 +287,6 @@ public loc getLocationOfNode(node subTree) {
 public void addSubTreeToMap(node subTree) {
 
 	loc location = getLocationOfNode(subTree);
-	
-	//iprintln(location);
 
 	if (buckets[subTree]?) {
 		buckets[subTree] += <subTree,location>;

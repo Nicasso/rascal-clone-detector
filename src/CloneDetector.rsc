@@ -15,11 +15,14 @@ import Relation;
 import ListRelation;
 import util::Math;
 import DateTime;
+import Traversal;
 
 public loc currentProject = |project://TestProject|;
 
 map[node,lrel[node,loc]] buckets = ();
 lrel[tuple[node,loc],tuple[node,loc]] clonePairs = [];
+lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
+set[Declaration] ast;
 
 public void main() {
 	iprintln("Lets Begin!");
@@ -29,11 +32,11 @@ public void main() {
 	
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
-	set[Declaration] ast = createAstsFromEclipseProject(currentProject, true);
+	ast = createAstsFromEclipseProject(currentProject, true);
 		
 	int massThreshold = 8;
 	real similarityThreshold = 0.5;
-	
+		
 	visit (ast) {
 		case node x: {
 			//iprintln("Mass: <calculateMass(x)>");
@@ -88,8 +91,86 @@ public void main() {
 		if (reversePair notin newClonePairs) {		
 			newClonePairs += pair;
 		}
-
 	}
+	
+	clonePairs = newClonePairs;
+	
+	/*
+	iprintln("ORIGINAL CLONES");
+	for (pair <- clonePairs) {
+		iprintln(pair[0][1]);
+		iprintln(pair[1][1]);
+		iprintln("NEXT!");
+	}
+	*/
+	
+	// Generalizing clones
+	
+	clonesToGeneralize = clonePairs;
+	
+	for (currentClonePair <- clonesToGeneralize) {
+		clonesToGeneralize = clonesToGeneralize - currentClonePair;
+		
+		list[node] parents = getParentsOfClone(currentClonePair[0][0]);
+		//list[node] parents = getParentsOfClone(currentClonePair[1][0]);
+		
+		iprintln("child");
+		iprintln(currentClonePair[0][1]);
+		
+		//loc location1 = getLocationOfNode(parent1);
+		
+		iprintln("parents");
+		for (parent <- parents) {
+			loc parentLocation = getLocationOfNode(parent);
+			iprintln(parentLocation);
+		}
+		
+		//break;
+		/*
+		if (calculateSimilarity(parent1,parent2) > similarityThreshold) {
+			clonePairs = clonePairs - currentClonePair;
+			
+			loc location1 = getLocationOfNode(parent1);
+			loc location2 = getLocationOfNode(parent2);
+			
+			tuple[tuple[node,loc],tuple[node,loc]] parentPair;
+			parentPair = <<parent1,location1>,<parent2,location2>>;
+			
+			clonePairs += parentPair; 
+			clonesToGeneralize += parentPair;
+		}
+		*/
+	}
+	
+	/*
+	iprintln("GENERALIZED CLONES");
+	for (pair <- clonePairs) {
+		iprintln(pair[0][1]);
+		iprintln(pair[1][1]);
+		iprintln("NEXT!");
+	}
+	*/
+}
+
+public list[node] getParentsOfClone(node current) {
+	
+	list[node] parents = [];
+	
+	top-down visit (ast) {
+		case current: {
+			list[value] context = getTraversalContext();
+			
+			if (node x := context[2]) {
+				//iprintln("FOUND PARENT");
+				parents += x;
+			} 
+			//iprintln(getLocationOfValue(context[2]));
+			//iprintln("NEXT");
+			//iprintln("--------------------------------------------------------------------------------------");
+		}
+	}
+	
+	return parents;
 }
 
 public void isMemberOfClones(node target) {
@@ -127,9 +208,9 @@ public int calculateSimilarity(node t1, node t2) {
 	return similarity;
 }
 
-public void addSubTreeToMap(node subTree) {
-
+public loc getLocationOfNode(node subTree) {
 	loc location;
+	
 	if (Declaration d := subTree) { 
 		location = d@src;
 	} else if (Expression e := subTree) {
@@ -139,6 +220,13 @@ public void addSubTreeToMap(node subTree) {
 	} else {
 		iprintln("WTF GEEN LOCATION?!");
 	}
+	
+	return location;
+}
+
+public void addSubTreeToMap(node subTree) {
+
+	loc location = getLocationOfNode(subTree);
 	
 	//iprintln(location);
 

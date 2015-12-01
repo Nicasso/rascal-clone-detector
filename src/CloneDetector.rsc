@@ -35,7 +35,7 @@ public void main() {
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
 	int massThreshold = 8;
-	real similarityThreshold = 0.5;
+	real similarityThreshold = 0.75;
 		
 	visit (ast) {
 		case node x: {
@@ -53,15 +53,11 @@ public void main() {
 			lrel[tuple[node,loc] L, tuple[node,loc] R] complementBucket = [];
 			complementBucket += buckets[bucket] * buckets[bucket];
 			
-			//iprintln(size(complementBucket));
-			
 			complementBucket = [p | p <- complementBucket, p.L != p.R];
-						
-			//iprintln(size(complementBucket));
 									
 			for (treeRelation <- complementBucket) {
 				//iprintln(treeRelation);
-				int similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0]);
+				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0]);
 				//iprintln(similarity);
 				if (similarity > similarityThreshold) {
 					
@@ -83,27 +79,8 @@ public void main() {
 		}
 	}
 	
-	
-	// Remove one of the symmetric pairs (a,b) & (b,a) should result in only one of the two.
-	lrel[tuple[node,loc],tuple[node,loc]] newClonePairs = [];
-	for (pair <- clonePairs) {
-		tuple[tuple[node,loc],tuple[node,loc]] reversePair = <<pair[1][0],pair[1][1]>,<pair[0][0],pair[0][1]>>;
-		if (reversePair notin newClonePairs) {		
-			newClonePairs += pair;
-		}
-	}
-	
-	clonePairs = newClonePairs;
-	
-	/*
-	iprintln("ORIGINAL CLONES");
-	for (pair <- clonePairs) {
-		iprintln(pair[0][1]);
-		iprintln(pair[1][1]);
-		iprintln("NEXT!");
-	}
-	*/
-	
+	clonePairs = removeSymmetricPairs(clonePairs);
+
 	// Generalizing clones
 	
 	clonesToGeneralize = clonePairs;
@@ -112,44 +89,52 @@ public void main() {
 		clonesToGeneralize = clonesToGeneralize - currentClonePair;
 		
 		list[node] parents = getParentsOfClone(currentClonePair[0][0]);
-		//list[node] parents = getParentsOfClone(currentClonePair[1][0]);
 		
-		iprintln("child");
-		iprintln(currentClonePair[0][1]);
+		// Dunno if this is required, but lets keep it for now just to be sure.
+		parents += getParentsOfClone(currentClonePair[1][0]);
+		parents = dup(parents);
 		
-		//loc location1 = getLocationOfNode(parent1);
-		
-		iprintln("parents");
+		lrel[node,loc] parentsPairs = [];
 		for (parent <- parents) {
 			loc parentLocation = getLocationOfNode(parent);
-			iprintln(parentLocation);
+			parentsPairs += <parent, parentLocation>;
 		}
+				
+		lrel[tuple[node,loc] L, tuple[node,loc] R] complementParents = [];
+		complementParents += parentsPairs * parentsPairs;
 		
-		//break;
-		/*
-		if (calculateSimilarity(parent1,parent2) > similarityThreshold) {
-			clonePairs = clonePairs - currentClonePair;
-			
-			loc location1 = getLocationOfNode(parent1);
-			loc location2 = getLocationOfNode(parent2);
-			
-			tuple[tuple[node,loc],tuple[node,loc]] parentPair;
-			parentPair = <<parent1,location1>,<parent2,location2>>;
-			
-			clonePairs += parentPair; 
-			clonesToGeneralize += parentPair;
+		complementParents = [p | p <- complementParents, p.L != p.R];
+		complementParents = removeSymmetricPairs(complementParents);
+		
+		for (parentRelation <- complementParents) {
+			num similarity = calculateSimilarity(parentRelation[0][0],parentRelation[1][0]);
+			if (similarity > similarityThreshold) {
+				clonePairs = clonePairs - currentClonePair;
+				
+				clonePairs += parentRelation; 
+				clonesToGeneralize += parentRelation;
+			}
 		}
-		*/
 	}
-	
-	/*
-	iprintln("GENERALIZED CLONES");
+		
+	iprintln("CLONES");
 	for (pair <- clonePairs) {
 		iprintln(pair[0][1]);
 		iprintln(pair[1][1]);
 		iprintln("NEXT!");
 	}
-	*/
+}
+
+public lrel[tuple[node,loc],tuple[node,loc]] removeSymmetricPairs(lrel[tuple[node,loc],tuple[node,loc]] clonePairs) {
+	// Remove one of the symmetric pairs (a,b) & (b,a) should result in only one of the two.
+	lrel[tuple[node,loc],tuple[node,loc]] newClonePairs = [];
+	for (pair <- clonePairs) {
+		tuple[tuple[node,loc],tuple[node,loc]] reversePair = <<pair[1][0],pair[1][1]>,<pair[0][0],pair[0][1]>>;
+		if (reversePair notin newClonePairs) {		
+			newClonePairs += pair;
+		}
+	}
+	return newClonePairs;
 }
 
 public list[node] getParentsOfClone(node current) {
@@ -181,7 +166,7 @@ public void isMemberOfClones(node target) {
 	}
 }
 
-public int calculateSimilarity(node t1, node t2) {
+public num calculateSimilarity(node t1, node t2) {
 	//Similarity = 2 x S / (2 x S + L + R)
 	
 	list[node] tree1 = [];
@@ -199,11 +184,11 @@ public int calculateSimilarity(node t1, node t2) {
 		}
 	}
 	
-	int s = size(tree1 & tree2);
-	int l = size(tree1 - tree2);
-	int r = size(tree2 - tree1); 
+	num s = size(tree1 & tree2);
+	num l = size(tree1 - tree2);
+	num r = size(tree2 - tree1); 
 		
-	int similarity = (2 * s) / (2 * s + l + r); 
+	num similarity = (2 * s) / (2 * s + l + r); 
 	
 	return similarity;
 }

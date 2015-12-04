@@ -18,34 +18,42 @@ import DateTime;
 import Traversal;
 
 public loc currentProject = |project://TestProject|;
+//public loc currentProject = |project://hsqldb-2.3.1|;
 
 map[node,lrel[node,loc]] buckets = ();
 
 map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses = ();
 
-lrel[tuple[node,loc],tuple[node,loc]] clonePairs = [];
+list[node] subCloneClasses = [];
+
+//lrel[tuple[node,loc],tuple[node,loc]] clonePairs = [];
 lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
 set[Declaration] ast;
+
+int massThreshold;
 
 public void main() {
 	iprintln("Attack of the clones!");
 	
 	buckets = ();
-	clonePairs = [];
+	//clonePairs = [];
 	cloneClasses = ();
+	subCloneClasses = [];
 
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
-	int massThreshold = 8;
+	massThreshold = 8;
 	real similarityThreshold = 0.75;
 	
 	// Step 1. Finding Sub-tree Clones
 	
+	// Add all the subtrees with a decent mass to a bucket.
 	visit (ast) {
 		case node x: {
 			if (calculateMass(x) >= massThreshold) {
+				//node x = normalizeAST(x);
 				addSubTreeToMap(x);
 			}
 		}
@@ -66,11 +74,10 @@ public void main() {
 					
 					// Look for smaller clones within the trees and remove them.
 					// @TODO This is broken, it messes up the results.
-					// It will remove almosts ALL results...
-					checkForInnerClones(treeRelation[0]);
-					checkForInnerClones(treeRelation[1]);
+					//checkForInnerClones(treeRelation[0]);
+					//checkForInnerClones(treeRelation[1]);
 					
-					clonePairs += treeRelation;
+					//clonePairs += treeRelation;
 					
 					if (cloneClasses[treeRelation[0][0]]?) {
 						cloneClasses[treeRelation[0][0]] += treeRelation;
@@ -82,20 +89,56 @@ public void main() {
 		}
 	}
 	
-	iprintln("Amount of clonepairs after step 1: <size(clonePairs)>");
+	for (currentClass <- cloneClasses) {
+		for (currentClone <- cloneClasses[currentClass]) {
+			checkForInnerClones(currentClone[0]);
+			checkForInnerClones(currentClone[1]);
+		}
+	}
 	
+	// Hope this works in all cases.
+	for (subCloneClas <- subCloneClasses) {
+		cloneClasses = delete(cloneClasses, subCloneClas);
+	}
+	
+	//iprintln("Amount of clonepairs after step 1: <size(clonePairs)>");
+	
+	set[loc] clonePairsPerClass = {};
 	iprintln("Class sizes");
 	for (currentClass <- cloneClasses) {
-		iprintln(size(cloneClasses[currentClass]));
+		iprintln("Total clone pairs in this class: <size(cloneClasses[currentClass])>");
+		clonePairsPerClass = {};
+		for (currentClone <- cloneClasses[currentClass]) {
+			clonePairsPerClass += currentClone[0][1];
+			clonePairsPerClass += currentClone[1][1];
+		}
+		for (uniqueClone <- clonePairsPerClass) {
+			iprintln(uniqueClone);
+		}
 		iprintln("--------------------------------------------------");
 	}
 	
-	printCloneResults();
+	
+	
+	/*
+	loc a = currentClone[0][1];
+	loc b = currentClone[1][1];
+	
+	iprintln("LOCATION CHECK");
+	iprintln(a);
+	iprintln(b);
+	iprintln("A GT B <a>b>");	
+	*/
+	
+	
+	//printCloneResults();
 	
 	// Step 2. Finding Clone Sequences
+	
+	
 
 	// Step 3. Generalizing clones
-	
+	/*
 	clonesToGeneralize = clonePairs;
 	
 	while (currentClonePair <- clonesToGeneralize) {
@@ -150,14 +193,17 @@ public void main() {
 		//iprintln("----------------------------------");
 	}
 	
-	/*
-	for (clone <- clonePairs) {
-		checkForInnerClones(clone[0][0]);
-		checkForInnerClones(clone[1][0]);
-	}
+	//printCloneResults();
 	*/
-	
-	printCloneResults();
+}
+
+// Normalize all variable types of the leaves in a tree.
+public node normalizeAST(node ast) {
+	return visit (ast) {
+		case \int(): {
+			int a;
+		}
+	}
 }
 
 public void printCloneResults() {
@@ -173,16 +219,38 @@ public void printCloneResults() {
 public void checkForInnerClones(tuple[node,loc] tree) {
 	visit (tree[0]) {
 		case node x: {
-			if (x != tree[0]) {
-				//iprintln("WTF?!?!?!?!?!?!??!");
+			// Only if the tree is not equal to itself, and has a certain mass.
+			if (x != tree[0] && calculateMass(x) >= massThreshold) {
 				loc location = getLocationOfNode(x);
-				isMemberOfClones(x, location);
-			} else {
-				//iprintln("SAME");
-				int a;
+				tuple[node,loc] current = <x, location>;
+				bool member = isMemberOfClones(current);
+				if (member) {
+					//cloneClasses = delete(cloneClasses, current[0]);
+					subCloneClasses += x;
+				}
 			}
 		}
 	}
+}
+
+public bool isMemberOfClones(tuple[node,loc] current) {	
+
+	for (currentcloneClass <- cloneClasses) {
+		for (currentPair <- cloneClasses[currentcloneClass]) {
+			if (
+			(current[1] < currentPair[0][1] && currentPair[0][1] > current[1]) 
+			
+			|| (current[1] < currentPair[1][1] && currentPair[1][1] > current[1])) {
+				iprintln("<size(cloneClasses[current[0]])> - <size(cloneClasses[currentcloneClass])>");
+				if (size(cloneClasses[current[0]]) == size(cloneClasses[currentcloneClass])) {
+					iprintln("THIS");
+					return true;
+				}
+			}	
+		}
+	}
+	
+	return false;
 }
 
 public lrel[tuple[node,loc],tuple[node,loc]] removeSymmetricPairs(lrel[tuple[node,loc],tuple[node,loc]] clonePairs) {
@@ -227,20 +295,6 @@ public list[node] getParentsOfClone(node current) {
 	return parents;
 }
 
-public void isMemberOfClones(node target, loc location) {
-	tuple[node,loc] current = <target,location>;
-	
-	for (relation <- clonePairs) {
-		if (current == relation[0] || current == relation[1]) {
-			if(size(cloneClasses[target]) == 1) {
-				clonePairs = clonePairs - relation;
-				cloneClasses = delete(cloneClasses, target);   
-			}
-			
-		}
-	}
-}
-
 public num calculateSimilarity(node t1, node t2) {
 	//Similarity = 2 x S / (2 x S + L + R)
 	
@@ -277,8 +331,12 @@ public loc getLocationOfNode(node subTree) {
 		location = e@src;
 	} else if (Statement s := subTree) {
 		location = s@src;
+	} else if (Type t := subTree) {
+		iprintln("WTF THIS IS A TYPE!");
+	} else if (Modifier m := subTree) {
+		iprintln("WTF THIS IS A MODIFIER!");
 	} else {
-		iprintln("WTF NO LOCATION?!");
+		iprintln("WTF IS THIS?!");
 	}
 	
 	return location;

@@ -20,21 +20,21 @@ import DateTime;
 
 public int projectNamelength;
 public list[loc] allJavaLoc;
-public lrel[str,int] boxInformation;
+public lrel[str,int] boxInformation = [];
 public list[Figure] boxList;
 
 public loc currentProject = |project://smallsql0.21_src/|;
 
 public void begin() {
-	calculateNamelength(Vis::currentProject);
+	calculateNamelength();
 	getAllJavaFiles();
 	createBoxInformation();
-	Vis::boxList = createBoxList(boxInformation);
-	treeMap();
+	createBoxList();
+	createTreeMap();
 }
 
-public void calculateNamelength(loc project) {
-	str projectName = toString(project);
+public void calculateNamelength() {
+	str projectName = toString(Vis::currentProject);
 	Vis::projectNamelength = size(projectName);
 	if(projectName[(Vis::projectNamelength - 2)] == "/"){
 		Vis::projectNamelength -= 1;
@@ -42,24 +42,24 @@ public void calculateNamelength(loc project) {
 }
 
 public void getAllJavaFiles() {
-	allJavaLoc = crawl(Vis::currentProject, ".java");
+	Vis::allJavaLoc = crawl(Vis::currentProject, ".java");
 }
 
 public void createBoxInformation() {
-	boxInformation = [];
 	for(loc n <- allJavaLoc){
 		str name = toString(n)[(Vis::projectNamelength)..-1];
 		int LOC = 10;
-		rel[str,int] boxInfo = <name,LOC>;
-		boxInformation += boxInfo;
+		tuple[str,int] boxInfo = <name,LOC>;
+		Vis::boxInformation += [boxInfo];
 	}
+	iprint(Vis::boxInformation[0]);
 }
 
-public list[Figure] createBoxList(lrel[str,int] boxInformation) {
-	return for(str n <- boxInformation[0]) append box();
+public void createBoxList() {
+	Vis::boxList = for(tuple[str,int] n <- Vis::boxInformation) append box();
 }
 
-public void treeMap() {
+public void createTreeMap() {
 	t = treemap(Vis::boxList);
 	render(t);
 }

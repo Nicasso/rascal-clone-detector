@@ -32,23 +32,23 @@ public void begin() {
 }
 
 public void clearMemory(){
-	Vis::filesInLocation = [];
-	//Vis::infoList = [];
-	Vis::boxList = [];
+	Vis2::filesInLocation = [];
+	//Vis2::infoList = [];
+	Vis2::boxList = [];
 }
 
 public void gotoCurrentLocation() {
-	Vis::currentLocation = Vis::currentProject + "src";
-	while(size(Vis::currentLocation.ls) == 1){
-		Vis::currentLocation = Vis::currentLocation.ls[0];
+	Vis2::currentLocation = Vis2::currentProject + "src";
+	while(size(Vis2::currentLocation.ls) == 1){
+		Vis2::currentLocation = Vis2::currentLocation.ls[0];
 	}
 }
 
 public void createBoxList(){
-	Vis::filesInLocation = Vis::currentLocation.ls;
-	for(loc location <- Vis::filesInLocation){
-		Vis::boxList += box(
-							text(replaceFirst(location.path,Vis::currentLocation.path + "/",""))
+	Vis2::filesInLocation = Vis2::currentLocation.ls;
+	for(loc location <- Vis2::filesInLocation){
+		Vis2::boxList += box(
+							text(replaceFirst(location.path,Vis2::currentLocation.path + "/",""))
 						);
 	}
 }
@@ -57,8 +57,8 @@ public void createTreeMap(){
 	t = treemap([
 			box(
 				vcat([
-					text(toString(Vis::currentLocation)),
-					treemap(Vis::boxList,shrink(0.95))
+					text(toString(Vis2::currentLocation)),
+					treemap(Vis2::boxList,shrink(0.95))
 				])
 			)
 		]);
@@ -72,35 +72,35 @@ public void createTreeMap(){
 
 public void createBoxInformation() {
 	tuple[loc,int] boxInfo;
-	for(loc location <- Vis::allJavaLoc){
+	for(loc location <- Vis2::allJavaLoc){
 		loc name = location;
 		int LOC = size(readFileLines(location));
 		boxInfo = <name,LOC>;
-		Vis::infoList += [boxInfo];
+		Vis2::infoList += [boxInfo];
 	}
 }
 
 public void createBoxList() {
-	//iprint(Vis::infoList);
-	for(tuple[loc,int] n <- Vis::infoList){
-		Vis::boxList += box(area(n[1]));	
+	//iprint(Vis2::infoList);
+	for(tuple[loc,int] n <- Vis2::infoList){
+		Vis2::boxList += box(area(n[1]));	
 	}
 }
 
 public void createTreeMap() {
-	t = treemap(Vis::boxList);
+	t = treemap(Vis2::boxList);
 	render(t);
 }
 
 from = color("White");
 to = color("Red");
 int maxLOC = 0;
-for(tuple[str,int] n <- Vis::boxInformation){
+for(tuple[str,int] n <- Vis2::boxInformation){
 	if(n[1] > maxLOC){
 		maxLOC = n[1];
 	}
 }
-for(tuple[str,int] n <- Vis::boxInformation){
-	Vis::boxList += box(area(n[1]), fillColor(interpolateColor(from, to, (toReal(n[1]) / maxLOC))));	
+for(tuple[str,int] n <- Vis2::boxInformation){
+	Vis2::boxList += box(area(n[1]), fillColor(interpolateColor(from, to, (toReal(n[1]) / maxLOC))));	
 }
 */

@@ -27,7 +27,8 @@ map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses = ();
 
 list[node] subCloneClasses = [];
 
-map[list[Statement],list[Statement]] allSequences = ();
+//map[list[Statement],list[Statement]] allSequences = ();
+list[lrel[node,loc]] allSequences = [];
 map[list[node],list[tuple[node,loc]]] cloneSequences = ();
 
 lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
@@ -42,7 +43,7 @@ public void main() {
 	cloneClasses = ();
 	subCloneClasses = [];
 	cloneSequences = ();
-	allSequences = ();
+	//allSequences = ();
 
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
@@ -120,11 +121,13 @@ public void main() {
 	// THIS IS WORK IN PROGRESS!!!
 	findSequences(ast);
 	
-	for (currentClass <- cloneClasses) {
-		for (currentClone <- cloneClasses[currentClass]) {
-			int a;
-		}
-	}
+	//for (currentClass <- cloneClasses) {
+	//	for (currentClone <- cloneClasses[currentClass]) {
+	//		int a;
+	//	}
+	//}
+	
+	
 	
 
 	// Step 3. Generalizing clones
@@ -197,18 +200,42 @@ public node normalizeNodeDec(node ast) {
 
 // Work in progess
 public void findSequences(set[Declaration] ast) {
-	visit(ast) {
-		case \block(list[Statement] statements): {
-			if (size(statements) > 0) {
-				if (allSequences[statements]?) {
-					allSequences[statements] += statements;
-				} else {
-					allSequences[statements] = statements;
-				}
-				//iprintln(size(allSequences[statements]));
-			}
-	 	}
+	//allSequences = [stmts | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
+	allSequences = [[<n,n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
+	iprintln(size(allSequences));
+	for(sequences <- allSequences){
+	//if the current block does not contain any clones then we remove it.
+		for(sequence <- sequences){
+			if(!containsClone(block)){
+			//delete(allSequences, indexOf(allSequences,block));
+			allSequences = allSequences - [block];
+			}	
+		}
 	}
+	//iprintln(size(allSequences));
+	//
+	//visit(ast) {
+	//	case \block(list[Statement] statements): {
+	//		if (size(statements) > 0) {
+	//			if (allSequences[statements]?) {
+	//				allSequences[statements] += statements;
+	//			} else {
+	//				allSequences[statements] = statements;
+	//			}
+	//			//iprintln(size(allSequences[statements]));
+	//		}
+	// 	}
+	//}
+}
+
+public bool containsClone(list[Statement] block){
+	for(stmt <- block){
+		for(pair <- newClonePairs){
+			if(stmt == pair[0][0] || stmt == pair[1][0])
+				return true;
+		}
+	}
+	return false;
 }
 
 public void printCloneResults() {

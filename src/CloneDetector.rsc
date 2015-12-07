@@ -18,6 +18,7 @@ import DateTime;
 import Traversal;
 
 public loc currentProject = |project://TestProject|;
+//public loc currentProject = |project://smallsql0.21_src|;
 //public loc currentProject = |project://hsqldb-2.3.1|;
 
 map[node,lrel[node,loc]] buckets = ();
@@ -25,6 +26,9 @@ map[node,lrel[node,loc]] buckets = ();
 map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses = ();
 
 list[node] subCloneClasses = [];
+
+map[list[Statement],list[Statement]] allSequences = ();
+map[list[node],list[tuple[node,loc]]] cloneSequences = ();
 
 lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
 set[Declaration] ast;
@@ -37,12 +41,14 @@ public void main() {
 	buckets = ();
 	cloneClasses = ();
 	subCloneClasses = [];
+	cloneSequences = ();
+	allSequences = ();
 
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
-	massThreshold = 8;
+	massThreshold = 5;
 	real similarityThreshold = 0.75;
 	
 	// Step 1. Finding Sub-tree Clones
@@ -108,20 +114,18 @@ public void main() {
 		iprintln("--------------------------------------------------");
 	}
 	
-	/*
-	loc a = currentClone[0][1];
-	loc b = currentClone[1][1];
-	
-	iprintln("LOCATION CHECK");
-	iprintln(a);
-	iprintln(b);
-	iprintln("A GT B <a>b>");	
-	*/
-	
-	
 	//printCloneResults();
 	
 	// Step 2. Finding Clone Sequences
+	// THIS IS WORK IN PROGRESS!!!
+	findSequences(ast);
+	
+	for (currentClass <- cloneClasses) {
+		for (currentClone <- cloneClasses[currentClass]) {
+			int a;
+		}
+	}
+	
 
 	// Step 3. Generalizing clones
 	/*
@@ -188,6 +192,22 @@ public node normalizeNodeDec(node ast) {
 		case \booleanLiteral(_) => \booleanLiteral(true)
 		case \stringLiteral(_) => \stringLiteral("b")
 		case \characterLiteral(_) => \characterLiteral("c")
+	}
+}
+
+// Work in progess
+public void findSequences(set[Declaration] ast) {
+	visit(ast) {
+		case \block(list[Statement] statements): {
+			if (size(statements) > 0) {
+				if (allSequences[statements]?) {
+					allSequences[statements] += statements;
+				} else {
+					allSequences[statements] = statements;
+				}
+				//iprintln(size(allSequences[statements]));
+			}
+	 	}
 	}
 }
 

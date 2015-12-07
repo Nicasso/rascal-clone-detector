@@ -19,10 +19,11 @@ import demo::common::Crawl;
 import DateTime;
 
 public list[loc] filesInLocation = [];
-//public lrel[loc,int] infoList = [];
-public list[Figure] boxList = [];
+public list[Figure] fileBoxList = [];
+public list[Figure] mapBoxList = [];
 public loc currentLocation;
-public loc currentProject = |project://smallsql0.21_src|;
+public loc currentProject = |project://smallsql0.21_src/src|;
+//public loc currentProject = |project://hsqldb-2.3.1/hsqldb|;
 
 public void begin() {
 	clearMemory();
@@ -33,74 +34,66 @@ public void begin() {
 
 public void clearMemory(){
 	Vis2::filesInLocation = [];
-	//Vis2::infoList = [];
-	Vis2::boxList = [];
+	Vis2::fileBoxList = [];
+	Vis2::mapBoxList = [];
 }
 
 public void gotoCurrentLocation() {
-	Vis2::currentLocation = Vis2::currentProject + "src";
-	while(size(Vis2::currentLocation.ls) == 1){
-		Vis2::currentLocation = Vis2::currentLocation.ls[0];
-	}
+	Vis2::currentLocation = Vis2::currentProject;
 }
 
 public void createBoxList(){
 	Vis2::filesInLocation = Vis2::currentLocation.ls;
-	for(loc location <- Vis2::filesInLocation){
-		Vis2::boxList += box(
-							text(replaceFirst(location.path,Vis2::currentLocation.path + "/",""))
+							Vis2::mapBoxList += box(
+							text("..."),
+							fillColor("Yellow"),
+							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+								if(Vis2::currentLocation == Vis2::currentProject + "src"){
+									return true;
+								} else{
+									Vis2::currentLocation = Vis2::currentLocation.parent;
+									clearMemory();
+									createBoxList();
+									createTreeMap();
+									return true;
+								}
+							})
 						);
+	for(loc location <- Vis2::filesInLocation){
+		loc tmploc = location;
+		if(location.extension == "java"){
+			Vis2::fileBoxList += box(
+							area(size(readFileLines(location))),
+							//text(replaceFirst(location.path,Vis2::currentLocation.path + "/", ""), fontSize(10)),
+							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+								Vis2::currentLocation = tmploc;
+								clearMemory();
+								createBoxList();
+								createTreeMap();
+								return true;
+							})
+						);
+		}else{
+			Vis2::mapBoxList += box(
+							text(replaceFirst(location.path,Vis2::currentLocation.path,"")),
+							fillColor("Yellow"),
+							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+								Vis2::currentLocation = tmploc;
+								clearMemory();
+								createBoxList();
+								createTreeMap();
+								return true;
+							})
+						);
+		}
 	}
 }
 
 public void createTreeMap(){
-	t = treemap([
-			box(
-				vcat([
-					text(toString(Vis2::currentLocation)),
-					treemap(Vis2::boxList,shrink(0.95))
-				])
-			)
+	t = vcat([
+			box(text(toString(Vis2::currentLocation)), vshrink(0.01)),
+			box(treemap(Vis2::mapBoxList), vshrink(0.04)),
+			box(treemap(Vis2::fileBoxList))
 		]);
 	render(t);
 }
-
-
-
-
-/*
-
-public void createBoxInformation() {
-	tuple[loc,int] boxInfo;
-	for(loc location <- Vis2::allJavaLoc){
-		loc name = location;
-		int LOC = size(readFileLines(location));
-		boxInfo = <name,LOC>;
-		Vis2::infoList += [boxInfo];
-	}
-}
-
-public void createBoxList() {
-	//iprint(Vis2::infoList);
-	for(tuple[loc,int] n <- Vis2::infoList){
-		Vis2::boxList += box(area(n[1]));	
-	}
-}
-
-public void createTreeMap() {
-	t = treemap(Vis2::boxList);
-	render(t);
-}
-
-from = color("White");
-to = color("Red");
-int maxLOC = 0;
-for(tuple[str,int] n <- Vis2::boxInformation){
-	if(n[1] > maxLOC){
-		maxLOC = n[1];
-	}
-}
-for(tuple[str,int] n <- Vis2::boxInformation){
-	Vis2::boxList += box(area(n[1]), fillColor(interpolateColor(from, to, (toReal(n[1]) / maxLOC))));	
-}
-*/

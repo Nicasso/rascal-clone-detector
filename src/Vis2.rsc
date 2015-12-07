@@ -22,8 +22,9 @@ public list[loc] filesInLocation = [];
 public list[Figure] fileBoxList = [];
 public list[Figure] mapBoxList = [];
 public loc currentLocation;
-public loc currentProject = |project://smallsql0.21_src/src|;
-//public loc currentProject = |project://hsqldb-2.3.1/hsqldb|;
+public loc currentProject = |home:///Documents/Eclipse%20Workspace/smallsql0.21_src|;
+//public loc currentProject = |home:///Documents/Eclipse%20Workspace/hsqldb-2.3.1|;
+//public loc currentProject = |home:///Documents/Eclipse%20Workspace/Project%20Application%20Development|;
 
 public void begin() {
 	clearMemory();
@@ -48,7 +49,7 @@ public void createBoxList(){
 							text("..."),
 							fillColor("Yellow"),
 							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-								if(Vis2::currentLocation == Vis2::currentProject + "src"){
+								if(Vis2::currentLocation == Vis2::currentProject){
 									return true;
 								} else{
 									Vis2::currentLocation = Vis2::currentLocation.parent;
@@ -63,17 +64,14 @@ public void createBoxList(){
 		loc tmploc = location;
 		if(location.extension == "java"){
 			Vis2::fileBoxList += box(
-							area(size(readFileLines(location))),
-							//text(replaceFirst(location.path,Vis2::currentLocation.path + "/", ""), fontSize(10)),
-							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-								Vis2::currentLocation = tmploc;
-								clearMemory();
-								createBoxList();
-								createTreeMap();
+							//text(replaceFirst(location.path,Vis2::currentLocation.path + "/", ""), fontSize(2)),
+							area(size(readFileLines(location)))
+							,onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+								iprintln(tmploc);
 								return true;
 							})
 						);
-		}else{
+		}else if(contains(location.extension, "/") || location.extension == ""){
 			Vis2::mapBoxList += box(
 							text(replaceFirst(location.path,Vis2::currentLocation.path,"")),
 							fillColor("Yellow"),
@@ -91,9 +89,9 @@ public void createBoxList(){
 
 public void createTreeMap(){
 	t = vcat([
-			box(text(toString(Vis2::currentLocation)), vshrink(0.01)),
+			box(text(toString(Vis2::currentLocation)), vshrink(0.04)),
 			box(treemap(Vis2::mapBoxList), vshrink(0.04)),
-			box(treemap(Vis2::fileBoxList))
+			box(treemap(Vis2::fileBoxList),vshrink(0.92))
 		]);
 	render(t);
 }

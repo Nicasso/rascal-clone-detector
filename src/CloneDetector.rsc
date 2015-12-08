@@ -320,8 +320,10 @@ public bool isMemberOfClones(tuple[node,loc] current) {
 	for (currentcloneClass <- cloneClasses) {
 		for (currentPair <- cloneClasses[currentcloneClass]) {
 			if ((current[1] < currentPair[0][1] && currentPair[0][1] > current[1]) || (current[1] < currentPair[1][1] && currentPair[1][1] > current[1])) {
-				if (size(cloneClasses[current[0]]) == size(cloneClasses[currentcloneClass])) {
-					return true;
+				if (cloneClasses[current[0]]?) {
+					if (size(cloneClasses[current[0]]) == size(cloneClasses[currentcloneClass])) {
+						return true;
+					}
 				}
 			}	
 		}

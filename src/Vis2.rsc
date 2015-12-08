@@ -1,4 +1,4 @@
-module Vis22
+module Vis2
 
 import vis::Figure;
 import vis::Render; 

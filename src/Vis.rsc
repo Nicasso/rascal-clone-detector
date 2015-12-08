@@ -67,7 +67,6 @@ public void createFileAndDirBoxes(){
 		if(location.extension == "java"){
 			c = false;
 			Vis::fileBoxList += box(
-							//text(replaceFirst(location.path,Vis::currentLocation.path + "/", ""), fontSize(5)),
 							area(size(readFileLines(location))),
 							fillColor(Color () { return c ? color("Black") : color("White"); }),
 							onMouseEnter(void () { c = true; Vis::highlightedFile = tmploc.file;}), 

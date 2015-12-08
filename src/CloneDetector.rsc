@@ -197,6 +197,8 @@ public void main() {
 	*/
 	//printCloneResults();
 	
+	iprintln(transfer(cloneClasses));
+	
 }
 
 // Normalize all variable types of the leaves in a tree.
@@ -459,3 +461,29 @@ public int calculateMass(node currentNode) {
 	}
 	return mass;
 }
+
+public list[lrel[loc,int,loc,int]] transfer(map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses){
+	list[lrel[loc,int,loc,int]] result = [];
+	set[set[loc]] allClones = {
+		{
+			*{clonePair[0][1], clonePair[1][1]}
+		|
+			clonePair <- cloneClasses[cloneClass]
+		}
+	|
+		cloneClass <- cloneClasses
+	};
+	for(cloneClass <- allClones){
+		lrel[loc,int,loc,int] temp = [];
+			for(location <- cloneClass){
+				 //<location of clone,
+				 // number of lines for the clone,
+				 // location of it's parent,
+				 // number of lines for the parent>
+				loc parent = toLocation(location.uri); 
+				temp += <location, computeLOC(location), parent, computeLOC(parent)>;   
+			}
+		result += [temp];
+	}
+	return result;
+} 

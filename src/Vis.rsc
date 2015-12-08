@@ -18,76 +18,78 @@ import util::Math;
 import demo::common::Crawl;
 import DateTime;
 
-public int projectNamelength;
-public list[loc] allJavaLoc;
-public lrel[str,int] boxInformation = [];
-public list[Figure] boxList = [];
+public list[loc] filesInLocation = [];
+public list[Figure] fileBoxList = [];
+public list[Figure] dirBoxList = [];
+public loc currentProject = |home:///Documents/Eclipse%20Workspace/smallsql0.21_src|;
+public loc currentLocation = Vis::currentProject;
 
-public loc currentProject = |project://smallsql0.21_src/|;
-//public loc currentProject = |project://hsqldb-2.3.1|;
-
-/**
- *	Counts a treemap for the currentProject.
- */
 public void begin() {
-	calculateNamelength();
-	getAllJavaFiles();
-	createBoxInformation();
-	createBoxList();
+	clearMemory();
+	createGoUpDirBox();
+	createFileAndDirBoxes();
 	createTreeMap();
 }
 
-/**
- *	Calculate the length of the currentProject, keep "/" at last position in mind. 
- */
-public void calculateNamelength() {
-	str projectName = toString(Vis::currentProject);
-	Vis::projectNamelength = size(projectName);
-	if(projectName[(Vis::projectNamelength - 2)] == "/"){
-		Vis::projectNamelength -= 1;
-	}
+public void clearMemory(){
+	Vis::filesInLocation = [];
+	Vis::fileBoxList = [];
+	Vis::dirBoxList = [];
 }
 
-/**
- *	Create list of all .java files in currentProject
- */
-public void getAllJavaFiles() {
-	Vis::allJavaLoc = crawl(Vis::currentProject, ".java");
+public void createGoUpDirBox(){
+	Vis::dirBoxList += box(
+						text("..."),
+						fillColor("Yellow"),
+						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+							if(Vis::currentLocation == Vis::currentProject){
+								return true;
+							} else{
+								Vis::currentLocation = Vis::currentLocation.parent;
+								begin();
+								return true;
+								}
+							})
+						);
 }
 
-/**
- *	Create list with name and LOC for every file.
- */
-public void createBoxInformation() {
-	for(loc n <- Vis::allJavaLoc){
-		str name = toString(n)[(Vis::projectNamelength)..-1];
-		int LOC = size(readFileLines(n));
-		tuple[str,int] boxInfo = <name,LOC>;
-		Vis::boxInformation += [boxInfo];
-	}
-}
-
-/**
- *	Create list with boxes for every file.
- */
-public void createBoxList() {
-	from = color("White");
-	to = color("Red");
-	int maxLOC = 0;
-	for(tuple[str,int] n <- Vis::boxInformation){
-		if(n[1] > maxLOC){
-			maxLOC = n[1];
+public void createFileAndDirBoxes(){			
+	Vis::filesInLocation = Vis::currentLocation.ls;	
+	for(loc location <- Vis::filesInLocation){
+		loc tmploc = location;
+		if(location.extension == "java"){
+			Vis::fileBoxList += box(
+							//text(replaceFirst(location.path,Vis::currentLocation.path + "/", ""), fontSize(5)),
+							area(size(readFileLines(location)))
+							,onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+								iprintln(tmploc);
+								return true;
+							})
+						);
+		}else if(contains(location.extension, "/") || location.extension == ""){
+			Vis::dirBoxList += box(
+							text(replaceFirst(location.path, Vis::currentLocation.path, "")),
+							fillColor("Yellow"),
+							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+								Vis::currentLocation = tmploc;
+								begin();
+								return true;
+								})
+							);
 		}
 	}
-	for(tuple[str,int] n <- Vis::boxInformation){
-		Vis::boxList += box(area(n[1]), fillColor(interpolateColor(from, to, (toReal(n[1]) / maxLOC))));	
+	if(isEmpty(Vis::fileBoxList)){
+		Vis::fileBoxList += box(
+							text("No .java files in directory")
+							);
 	}
 }
 
-/**
- *	Create treemap with list of boxes for every file.
- */
-public void createTreeMap() {
-	t = treemap(Vis::boxList);
+public void createTreeMap(){
+	t = vcat([
+			box(text(toString(Vis::currentLocation)), vshrink(0.04)),
+			box(treemap(Vis::dirBoxList), vshrink(0.04)),
+			box(treemap(Vis::fileBoxList), vshrink(0.92))
+		]);
 	render(t);
 }

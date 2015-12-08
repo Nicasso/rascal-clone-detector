@@ -1,4 +1,4 @@
-module Vis2
+module Vis22
 
 import vis::Figure;
 import vis::Render; 
@@ -18,80 +18,76 @@ import util::Math;
 import demo::common::Crawl;
 import DateTime;
 
-public list[loc] filesInLocation = [];
-public list[Figure] fileBoxList = [];
-public list[Figure] mapBoxList = [];
-public loc currentLocation;
-public loc currentProject = |home:///Documents/Eclipse%20Workspace/smallsql0.21_src|;
-//public loc currentProject = |home:///Documents/Eclipse%20Workspace/hsqldb-2.3.1|;
-//public loc currentProject = |home:///Documents/Eclipse%20Workspace/Project%20Application%20Development|;
+public int projectNamelength;
+public list[loc] allJavaLoc;
+public lrel[str,int] boxInformation = [];
+public list[Figure] boxList = [];
 
+public loc currentProject = |project://smallsql0.21_src/|;
+//public loc currentProject = |project://hsqldb-2.3.1|;
+
+/**
+ *	Counts a treemap for the currentProject.
+ */
 public void begin() {
-	clearMemory();
-	gotoCurrentLocation();
+	calculateNamelength();
+	getAllJavaFiles();
+	createBoxInformation();
 	createBoxList();
 	createTreeMap();
 }
 
-public void clearMemory(){
-	Vis2::filesInLocation = [];
-	Vis2::fileBoxList = [];
-	Vis2::mapBoxList = [];
-}
-
-public void gotoCurrentLocation() {
-	Vis2::currentLocation = Vis2::currentProject;
-}
-
-public void createBoxList(){
-	Vis2::filesInLocation = Vis2::currentLocation.ls;
-							Vis2::mapBoxList += box(
-							text("..."),
-							fillColor("Yellow"),
-							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-								if(Vis2::currentLocation == Vis2::currentProject){
-									return true;
-								} else{
-									Vis2::currentLocation = Vis2::currentLocation.parent;
-									clearMemory();
-									createBoxList();
-									createTreeMap();
-									return true;
-								}
-							})
-						);
-	for(loc location <- Vis2::filesInLocation){
-		loc tmploc = location;
-		if(location.extension == "java"){
-			Vis2::fileBoxList += box(
-							//text(replaceFirst(location.path,Vis2::currentLocation.path + "/", ""), fontSize(2)),
-							area(size(readFileLines(location)))
-							,onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-								iprintln(tmploc);
-								return true;
-							})
-						);
-		}else if(contains(location.extension, "/") || location.extension == ""){
-			Vis2::mapBoxList += box(
-							text(replaceFirst(location.path,Vis2::currentLocation.path,"")),
-							fillColor("Yellow"),
-							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-								Vis2::currentLocation = tmploc;
-								clearMemory();
-								createBoxList();
-								createTreeMap();
-								return true;
-							})
-						);
-		}
+/**
+ *	Calculate the length of the currentProject, keep "/" at last position in mind. 
+ */
+public void calculateNamelength() {
+	str projectName = toString(Vis2::currentProject);
+	Vis2::projectNamelength = size(projectName);
+	if(projectName[(Vis2::projectNamelength - 2)] == "/"){
+		Vis2::projectNamelength -= 1;
 	}
 }
 
-public void createTreeMap(){
-	t = vcat([
-			box(text(toString(Vis2::currentLocation)), vshrink(0.04)),
-			box(treemap(Vis2::mapBoxList), vshrink(0.04)),
-			box(treemap(Vis2::fileBoxList),vshrink(0.92))
-		]);
+/**
+ *	Create list of all .java files in currentProject
+ */
+public void getAllJavaFiles() {
+	Vis2::allJavaLoc = crawl(Vis2::currentProject, ".java");
+}
+
+/**
+ *	Create list with name and LOC for every file.
+ */
+public void createBoxInformation() {
+	for(loc n <- Vis2::allJavaLoc){
+		str name = toString(n)[(Vis2::projectNamelength)..-1];
+		int LOC = size(readFileLines(n));
+		tuple[str,int] boxInfo = <name,LOC>;
+		Vis2::boxInformation += [boxInfo];
+	}
+}
+
+/**
+ *	Create list with boxes for every file.
+ */
+public void createBoxList() {
+	from = color("White");
+	to = color("Red");
+	int maxLOC = 0;
+	for(tuple[str,int] n <- Vis2::boxInformation){
+		if(n[1] > maxLOC){
+			maxLOC = n[1];
+		}
+	}
+	for(tuple[str,int] n <- Vis2::boxInformation){
+		Vis2::boxList += box(area(n[1]), fillColor(interpolateColor(from, to, (toReal(n[1]) / maxLOC))));	
+	}
+}
+
+/**
+ *	Create treemap with list of boxes for every file.
+ */
+public void createTreeMap() {
+	t = treemap(Vis2::boxList);
 	render(t);
 }

@@ -24,7 +24,7 @@ public loc currentProject = |project://TestProject|;
 map[node, lrel[node, loc]] buckets = ();
 
 map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();
-map[list[node], lrel[list[tuple[node, loc]], list[tuple[node, loc]]]] cloneSequences = ();
+map[list[node], list[lrel[tuple[node, loc], tuple[node, loc]]]] cloneSequences = ();
 
 list[node] subCloneClasses = [];
 
@@ -133,7 +133,7 @@ public void main() {
 	
 	// Step 2. Finding Clone Sequences
 	// THIS IS WORK IN PROGRESS!!!
-	findSequences(ast);
+	//findSequences(ast);
 	
 	//for (currentClass <- cloneClasses) {
 	//	for (currentClone <- cloneClasses[currentClass]) {
@@ -229,11 +229,24 @@ public void findSequences(set[Declaration] ast) {
 	//iprintln("Total amount of sequences left: <size(blocks)>");
 }
 
+public void addCloneSequence(list[node] key, lrel[tuple[node, loc], tuple[node, loc]] sequence) {
+	cloneSequence[key] = cloneSequence[key]? cloneSequence[cloneSequence]+[sequence] : [sequence];
+	//if (cloneSequences[key]?) {
+	//	cloneSequences[key] += [sequence];
+	//} else {
+	//	cloneSequences[key] = [sequence];
+	//}
+}
+
 public bool containsClone(list[tuple[node,loc]] block) {
-	list[list[node]] sequences = [];
-	list[node] tmpSequence = [];
+	lrel[tuple[node, loc], tuple[node, loc]] tmpSequence = [];
+	
+	list[node] currentKey = [];
 	
 	bool added = false;
+	bool containsClones = false;
+	
+	//map[list[node], list[lrel[tuple[node, loc], tuple[node, loc]]]] cloneSequences = ();
 		
 	for (stmt <- block) {
 		added = false;
@@ -243,7 +256,9 @@ public bool containsClone(list[tuple[node,loc]] block) {
 					//iprintln("Found a clone");
 					//iprintln(currentClone[0][1]);
 					added = true;
-					tmpSequence += stmt[0];
+					tmpSequence += currentClone;
+					currentKey += stmt[0];
+					//currentClone;
 					continue;
 				}
 			}
@@ -254,34 +269,26 @@ public bool containsClone(list[tuple[node,loc]] block) {
 		
 		if (added == false && size(tmpSequence) > 1) {
 			//iprintln("Saving the current tmpSequence");
-			sequences += [tmpSequence];
+			addCloneSequence(currentKey, tmpSequence);
+			containsClones = true;
+			
 			tmpSequence = [];
+			currentKey = [];
 		} else if (added == false && size(tmpSequence) == 1) {
 			//iprintln("Resetting the current tmpSequence");
 			tmpSequence = [];
+			currentKey = [];
 		}
 	}
 	
 	if (size(tmpSequence) > 0) {
-		sequences += [tmpSequence];
+		addCloneSequence(currentKey, tmpSequence);
+		containsClones = true;
 	}
 	
-	/*
-	for(seq <- sequences) {
-		for(lol <- seq) {
-			loc lal = getLocationOfNode(lol);
-			iprintln(lal);
-		}
-	}
-	*/
+	//iprintln("Size sequences: <size(sequences)>");
 	
-	iprintln("Size sequences: <size(sequences)>");
-	
-	if (size(sequences) > 1) {
-		return true;
-	} else {
-		return false;
-	}
+	return containsClones;
 }
 
 public void printCloneResults() {

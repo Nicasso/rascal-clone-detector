@@ -16,6 +16,7 @@ import ListRelation;
 import util::Math;
 import DateTime;
 import Traversal;
+import Helper;
 
 public loc currentProject = |project://TestProject|;
 //public loc currentProject = |project://smallsql0.21_src|;
@@ -133,7 +134,18 @@ public void main() {
 	
 	// Step 2. Finding Clone Sequences
 	// THIS IS WORK IN PROGRESS!!!
-	//findSequences(ast);
+	findSequences(ast);
+	
+	iprintln("WOOT");
+	for (key <- cloneSequences) {
+		for (seq <- cloneSequences[key]) {
+			for (lol <- seq) {
+				iprintln(lol[0][1]);
+				iprintln(lol[1][1]);
+				iprintln("-------------------------------------------------------------------------");
+			}
+		}
+	}
 	
 	//for (currentClass <- cloneClasses) {
 	//	for (currentClone <- cloneClasses[currentClass]) {
@@ -197,7 +209,7 @@ public void main() {
 	*/
 	//printCloneResults();
 	
-	iprintln(transfer(cloneClasses));
+	//iprintln(transfer(cloneClasses));
 	
 }
 
@@ -230,12 +242,11 @@ public void findSequences(set[Declaration] ast) {
 }
 
 public void addCloneSequence(list[node] key, lrel[tuple[node, loc], tuple[node, loc]] sequence) {
-	cloneSequence[key] = cloneSequence[key]? cloneSequence[cloneSequence]+[sequence] : [sequence];
-	//if (cloneSequences[key]?) {
-	//	cloneSequences[key] += [sequence];
-	//} else {
-	//	cloneSequences[key] = [sequence];
-	//}
+	if (cloneSequences[key]?) {
+		cloneSequences[key] += [sequence];
+	} else {
+		cloneSequences[key] = [sequence];
+	}
 }
 
 public bool containsClone(list[tuple[node,loc]] block) {
@@ -245,9 +256,7 @@ public bool containsClone(list[tuple[node,loc]] block) {
 	
 	bool added = false;
 	bool containsClones = false;
-	
-	//map[list[node], list[lrel[tuple[node, loc], tuple[node, loc]]]] cloneSequences = ();
-		
+			
 	for (stmt <- block) {
 		added = false;
 		for (currentClass <- cloneClasses) {
@@ -258,7 +267,6 @@ public bool containsClone(list[tuple[node,loc]] block) {
 					added = true;
 					tmpSequence += currentClone;
 					currentKey += stmt[0];
-					//currentClone;
 					continue;
 				}
 			}
@@ -285,9 +293,7 @@ public bool containsClone(list[tuple[node,loc]] block) {
 		addCloneSequence(currentKey, tmpSequence);
 		containsClones = true;
 	}
-	
-	//iprintln("Size sequences: <size(sequences)>");
-	
+		
 	return containsClones;
 }
 

@@ -15,12 +15,16 @@ import Tuple;
 import String;
 import Relation;
 import util::Math;
+import util::Editors;
 import demo::common::Crawl;
 import DateTime;
 
 public list[loc] filesInLocation = [];
 public list[Figure] fileBoxList = [];
 public list[Figure] dirBoxList = [];
+public str highlightedFile = "";
+public str defaultColor = "LightGrey";
+public str highlightColor = "DarkGrey";
 public loc currentProject = |home:///Documents/Eclipse%20Workspace/smallsql0.21_src|;
 public loc currentLocation = Vis::currentProject;
 
@@ -38,9 +42,12 @@ public void clearMemory(){
 }
 
 public void createGoUpDirBox(){
+	c = false;
 	Vis::dirBoxList += box(
 						text("..."),
-						fillColor("Yellow"),
+						fillColor(Color () { return c ? color(Vis::highlightColor) : color(Vis::defaultColor); }),
+						onMouseEnter(void () { c = true;}), 
+						onMouseExit(void () { c = false;}),
 						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 							if(Vis::currentLocation == Vis::currentProject){
 								return true;
@@ -58,18 +65,26 @@ public void createFileAndDirBoxes(){
 	for(loc location <- Vis::filesInLocation){
 		loc tmploc = location;
 		if(location.extension == "java"){
+			c = false;
 			Vis::fileBoxList += box(
 							//text(replaceFirst(location.path,Vis::currentLocation.path + "/", ""), fontSize(5)),
-							area(size(readFileLines(location)))
-							,onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+							area(size(readFileLines(location))),
+							fillColor(Color () { return c ? color("Black") : color("White"); }),
+							onMouseEnter(void () { c = true; Vis::highlightedFile = tmploc.file;}), 
+							onMouseExit(void () { c = false; Vis::highlightedFile = "";}),
+							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 								iprintln(tmploc);
+								//edit(tmploc);
 								return true;
 							})
 						);
 		}else if(contains(location.extension, "/") || location.extension == ""){
+			c = false;
 			Vis::dirBoxList += box(
 							text(replaceFirst(location.path, Vis::currentLocation.path, "")),
-							fillColor("Yellow"),
+							fillColor(Color () { return c ? color(Vis::highlightColor) : color(Vis::defaultColor); }),
+							onMouseEnter(void () { c = true;}), 
+							onMouseExit(void () { c = false;}),
 							onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 								Vis::currentLocation = tmploc;
 								begin();
@@ -87,9 +102,10 @@ public void createFileAndDirBoxes(){
 
 public void createTreeMap(){
 	t = vcat([
-			box(text(toString(Vis::currentLocation)), vshrink(0.04)),
+			box(text(toString(Vis::currentLocation)), vshrink(0.04), fillColor(Vis::defaultColor)),
 			box(treemap(Vis::dirBoxList), vshrink(0.04)),
-			box(treemap(Vis::fileBoxList), vshrink(0.92))
+			box(treemap(Vis::fileBoxList), vshrink(0.88)),
+			box(text(str(){return "<Vis::highlightedFile>";}), vshrink(0.04), fillColor(Vis::defaultColor))
 		]);
 	render(t);
 }

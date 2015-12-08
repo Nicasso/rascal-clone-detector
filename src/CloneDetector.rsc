@@ -21,15 +21,15 @@ public loc currentProject = |project://TestProject|;
 //public loc currentProject = |project://smallsql0.21_src|;
 //public loc currentProject = |project://hsqldb-2.3.1|;
 
-map[node,lrel[node,loc]] buckets = ();
+map[node, lrel[node, loc]] buckets = ();
 
-map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses = ();
+map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();
+map[list[node], lrel[list[tuple[node, loc]], list[tuple[node, loc]]]] cloneSequences = ();
 
 list[node] subCloneClasses = [];
 
 //map[list[Statement],list[Statement]] allSequences = ();
 list[lrel[node,loc]] allSequences = [];
-map[list[node],list[tuple[node,loc]]] cloneSequences = ();
 
 lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
 set[Declaration] ast;
@@ -38,12 +38,13 @@ int massThreshold;
 
 public void main() {
 	iprintln("Attack of the clones!");
+	println(printTime(now(), "HH:mm:ss"));
 	
 	buckets = ();
 	cloneClasses = ();
 	subCloneClasses = [];
-	cloneSequences = ();
-	//allSequences = ();
+	allSequences = [];
+	clonesToGeneralize = [];
 
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
@@ -58,11 +59,14 @@ public void main() {
 	visit (ast) {
 		case node x: {
 			if (calculateMass(x) >= massThreshold) {
-				node x = normalizeNodeDec(x);
-				addSubTreeToMap(x);
+				node normalizedNode = normalizeNodeDec(x);
+				addSubTreeToMap(normalizedNode, x);
 			}
 		}
 	}
+	
+	println("Done with indexing the subtrees into buckets.");
+	println(printTime(now(), "HH:mm:ss"));
 	
 	for (bucket <- buckets) {
 		if (size(buckets[bucket]) >= 2) {
@@ -74,7 +78,8 @@ public void main() {
 			complementBucket = removeSymmetricPairs(complementBucket);
 				
 			for (treeRelation <- complementBucket) {
-				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0]);
+				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0])*1.0;
+				println("similarityThreshold: <similarity>");
 				if (similarity > similarityThreshold) {
 					
 					if (cloneClasses[treeRelation[0][0]]?) {
@@ -87,6 +92,9 @@ public void main() {
 		}
 	}
 	
+	println("Done with finding clones from buckets and created cloneClasses.");
+	println(printTime(now(), "HH:mm:ss"));
+	
 	// Loop through all the clone classes and remove all smaller subclones.
 	for (currentClass <- cloneClasses) {
 		for (currentClone <- cloneClasses[currentClass]) {
@@ -95,13 +103,19 @@ public void main() {
 		}
 	}
 	
+	println("Indexed all thesmaller subclones");
+	println(printTime(now(), "HH:mm:ss"));
+	
 	// Remove the subclones one by one from the cloneClasses.
 	for (subCloneClas <- subCloneClasses) {
 		cloneClasses = delete(cloneClasses, subCloneClas);
 	}
+	
+	println("Removed all subclones from the cloneClasses");
+	println(printTime(now(), "HH:mm:ss"));
 		
 	set[loc] clonePairsPerClass = {};
-	iprintln("Class sizes");
+	iprintln("Here come the clones!");
 	for (currentClass <- cloneClasses) {
 		iprintln("Total clone pairs in this class: <size(cloneClasses[currentClass])>");
 		clonePairsPerClass = {};
@@ -200,42 +214,72 @@ public node normalizeNodeDec(node ast) {
 
 // Work in progess
 public void findSequences(set[Declaration] ast) {
-	//allSequences = [stmts | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
-	allSequences = [[<n,n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
-	iprintln(size(allSequences));
-	for(sequences <- allSequences){
-	//if the current block does not contain any clones then we remove it.
-		for(sequence <- sequences){
-			if(!containsClone(block)){
-			//delete(allSequences, indexOf(allSequences,block));
-			allSequences = allSequences - [block];
-			}	
+	blocks = [[<n, n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
+	
+	//iprintln("Total amount of sequences found: <size(blocks)>");
+	for (block <- blocks) {
+		// if the current block does not contain any clones then we remove it.
+		if (!containsClone(block)) {
+			//delete(blocks, indexOf(blocks,block));
+			blocks = blocks - [block];
 		}
 	}
-	//iprintln(size(allSequences));
-	//
-	//visit(ast) {
-	//	case \block(list[Statement] statements): {
-	//		if (size(statements) > 0) {
-	//			if (allSequences[statements]?) {
-	//				allSequences[statements] += statements;
-	//			} else {
-	//				allSequences[statements] = statements;
-	//			}
-	//			//iprintln(size(allSequences[statements]));
-	//		}
-	// 	}
-	//}
+	//iprintln("Total amount of sequences left: <size(blocks)>");
 }
 
-public bool containsClone(list[Statement] block){
-	for(stmt <- block){
-		for(pair <- newClonePairs){
-			if(stmt == pair[0][0] || stmt == pair[1][0])
-				return true;
+public bool containsClone(list[tuple[node,loc]] block) {
+	list[list[node]] sequences = [];
+	list[node] tmpSequence = [];
+	
+	bool added = false;
+		
+	for (stmt <- block) {
+		added = false;
+		for (currentClass <- cloneClasses) {
+			for (currentClone <- cloneClasses[currentClass]) {
+				if (stmt[0] == currentClone[0][0] || stmt[0] == currentClone[1][0]) {
+					//iprintln("Found a clone");
+					//iprintln(currentClone[0][1]);
+					added = true;
+					tmpSequence += stmt[0];
+					continue;
+				}
+			}
+			if (added == true) {
+				continue;
+			}
+		}
+		
+		if (added == false && size(tmpSequence) > 1) {
+			//iprintln("Saving the current tmpSequence");
+			sequences += [tmpSequence];
+			tmpSequence = [];
+		} else if (added == false && size(tmpSequence) == 1) {
+			//iprintln("Resetting the current tmpSequence");
+			tmpSequence = [];
 		}
 	}
-	return false;
+	
+	if (size(tmpSequence) > 0) {
+		sequences += [tmpSequence];
+	}
+	
+	/*
+	for(seq <- sequences) {
+		for(lol <- seq) {
+			loc lal = getLocationOfNode(lol);
+			iprintln(lal);
+		}
+	}
+	*/
+	
+	iprintln("Size sequences: <size(sequences)>");
+	
+	if (size(sequences) > 1) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 public void printCloneResults() {
@@ -248,12 +292,16 @@ public void printCloneResults() {
 	}
 }
 
+// @TODO The performance of this method is super crap! Takes ages too finish!
 public void checkForInnerClones(tuple[node,loc] tree) {
 	visit (tree[0]) {
 		case node x: {
 			// Only if the tree is not equal to itself, and has a certain mass.
 			if (x != tree[0] && calculateMass(x) >= massThreshold) {
 				loc location = getLocationOfNode(x);
+				if (location == currentProject) {
+					continue;
+				}
 				tuple[node,loc] current = <x, location>;
 				bool member = isMemberOfClones(current);
 				if (member) {
@@ -350,14 +398,20 @@ public num calculateSimilarity(node t1, node t2) {
 }
 
 public loc getLocationOfNode(node subTree) {
-	loc location;
+	loc location = currentProject;
 	
 	if (Declaration d := subTree) { 
-		location = d@src;
+		if (d@src?) {
+			location = d@src;
+		}
 	} else if (Expression e := subTree) {
-		location = e@src;
+		if (e@src?) {
+			location = e@src;
+		}
 	} else if (Statement s := subTree) {
-		location = s@src;
+		if (s@src?) {
+			location = s@src;
+		}
 	} else if (Type t := subTree) {
 		iprintln("WTF THIS IS A TYPE!");
 	} else if (Modifier m := subTree) {
@@ -369,14 +423,18 @@ public loc getLocationOfNode(node subTree) {
 	return location;
 }
 
-public void addSubTreeToMap(node subTree) {
+public void addSubTreeToMap(node normalizedSubTree, node subTree) {
 
 	loc location = getLocationOfNode(subTree);
-
-	if (buckets[subTree]?) {
-		buckets[subTree] += <subTree,location>;
+	
+	if (location == currentProject) {
+		return;
+	}
+	
+	if (buckets[normalizedSubTree]?) {
+		buckets[normalizedSubTree] += <subTree,location>;
 	} else {
-		buckets[subTree] = [<subTree,location>];
+		buckets[normalizedSubTree] = [<subTree,location>];
 	}
 }
 

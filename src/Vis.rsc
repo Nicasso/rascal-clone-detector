@@ -19,18 +19,27 @@ import util::Editors;
 import demo::common::Crawl;
 import DateTime;
 
+import CloneDetector;
+import Helper;
+
 public list[loc] filesInLocation = [];
 public list[Figure] dirBoxList = [];
 public list[Figure] fileBoxList = [];
 public str textField = "";
+public lrel[loc location, int LOC] fileInformation = [];
 public str defaultDirColor = "LightGrey";
 public str highlightDirColor = "DarkGrey";
 public str defaultFileColor = "LightCyan";
 public str highlightFileColor = "PaleTurquoise";
-public loc currentProject = |home:///Documents/Eclipse%20Workspace/smallsql0.21_src|;
+public loc currentProject = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
 public loc currentLocation = Vis::currentProject;
 
-public void begin() {
+public void main(){
+	buildFileInformation();
+	startVisualization();
+}
+
+public void startVisualization() {
 	clearMemory();
 	createGoUpDirBox();
 	createFileAndDirBoxes();
@@ -45,22 +54,20 @@ public void clearMemory(){
 }
 
 public void createGoUpDirBox(){
-	bool highlight = false;
-	Vis::dirBoxList += box(
+	if(Vis::currentLocation != Vis::currentProject){
+		bool highlight = false;
+		Vis::dirBoxList += box(
 						text("..."),
 						fillColor(Color () { return highlight ? color(Vis::highlightDirColor) : color(Vis::defaultDirColor); }),
 						onMouseEnter(void () { highlight = true;}), 
 						onMouseExit(void () { highlight = false;}),
 						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-							if(Vis::currentLocation == Vis::currentProject){
-								return true;
-							} else{
-								Vis::currentLocation = Vis::currentLocation.parent;
-								begin();
-								return true;
-								}
+							Vis::currentLocation = Vis::currentLocation.parent;
+							startVisualization();
+							return true;
 							})
 						);
+	}
 }
 
 public void createFileAndDirBoxes(){			
@@ -76,16 +83,23 @@ public void createFileAndDirBoxes(){
 								onMouseExit(void () {highlight = false;}),
 								onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 									Vis::currentLocation = tmploc;
-									begin();
+									startVisualization();
 									return true;
 									})
 								);
 		} else if(location.extension == "java"){
 			bool highlight = false;
+			int boxArea;
+			for(file <- Vis::fileInformation){
+				if(file.location == location){
+					boxArea = file.LOC;
+					break;
+				}
+			}
 			Vis::fileBoxList += box(
-								area(size(readFileLines(location))),
+								area(boxArea),
 								fillColor(Color () { return highlight ? color(Vis::highlightFileColor) : color(Vis::defaultFileColor);}),
-								onMouseEnter(void () {highlight = true; Vis::textField = tmploc.file;}), 
+								onMouseEnter(void () {highlight = true; Vis::textField = tmploc.file + " (<boxArea> LOC)";}), 
 								onMouseExit(void () {highlight = false; Vis::textField = "";}),
 								onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 									Vis::currentLocation = tmploc;
@@ -102,13 +116,27 @@ public void createFileAndDirBoxes(){
 	}
 }
 
+public void buildFileInformation(){
+	for(location <- crawl(Vis::currentProject, ".java")){
+		Vis::fileInformation += <location, Helper::computeLOC(location)>;
+	}
+}
+
 public void viewFile(){
 	clearMemory();
 	createGoUpDirBox();
 	Vis::textField = "Click on file to edit";
 	bool highlight = false;
-	Vis::fileBoxList += box(
-						text("<size(readFileLines(Vis::currentLocation))> LOC in file"),
+	int boxArea;
+	for(file <- Vis::fileInformation){
+		if(file.location == Vis::currentLocation){
+			boxArea = file.LOC;
+			break;
+		}
+	}
+	Vis::fileBoxList += vcat([
+						box(
+						text("<boxArea> LOC in file"),
 						fillColor(Color () {return highlight ? color(Vis::highlightFileColor) : color(Vis::defaultFileColor);}),
 						onMouseEnter(void () {highlight = true;}), 
 						onMouseExit(void () {highlight = false;}),
@@ -116,7 +144,8 @@ public void viewFile(){
 									edit(Vis::currentLocation);
 									return true;
 									})
-						);
+						)
+						]);
 	createTreeMap();
 }
 

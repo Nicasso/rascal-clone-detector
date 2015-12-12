@@ -10,6 +10,8 @@ import List;
 import Map;
 import Tuple;
 import Type;
+import Set;
+import Prelude;
 import String;
 import Relation;
 import ListRelation;
@@ -23,18 +25,12 @@ public loc currentProject = |project://TestProject|;
 //public loc currentProject = |project://hsqldb-2.3.1|;
 
 map[node, lrel[node, loc]] buckets = ();
-
 map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();
-
 map[node, lrel[tuple[node, loc], tuple[node, loc]]] toBeRemoved = ();
-
 map[list[node], list[lrel[tuple[node, loc], tuple[node, loc]]]] cloneSequences = ();
-
 list[node] subCloneClasses = [];
-
 //map[list[Statement],list[Statement]] allSequences = ();
 list[lrel[node,loc]] allSequences = [];
-
 lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
 set[Declaration] ast;
 
@@ -42,7 +38,9 @@ int massThreshold;
 real similarityThreshold;
 int cloneType;
 
-public void main() {
+public void main(int cloneT) {
+	cloneType = cloneT;
+	
 	iprintln("Attack of the clones!");
 	println(printTime(now(), "HH:mm:ss"));
 	
@@ -53,19 +51,19 @@ public void main() {
 	clonesToGeneralize = [];
 	
 	toBeRemoved = ();
-	
-	cloneType = 1;
 
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
 	massThreshold = 5;
-	if (cloneType == 1 || cloneType == 2) {
-		similarityThreshold = 1.0;
-	} else {
+	if (cloneType == 1) {
+	    similarityThreshold = 1.0;
+  	} else if(cloneType == 2) {
+	    similarityThreshold = 1.0;
+  	} else if(cloneType == 3) {
 		similarityThreshold = 0.75;
-	}
+  	}
 	
 	// Step 1. Finding Sub-tree Clones
 	
@@ -73,14 +71,14 @@ public void main() {
 	visit (ast) {
 		case node x: {
 			if (calculateMass(x) >= massThreshold) {
-				if (cloneType == 2 || cloneType == 3) {
-					node normalizedNode = normalizeNodeDec(x);
-					
-					// @TODO Which one is it?
-					//addSubTreeToMap(normalizedNode, x);
-					addSubTreeToMap(normalizedNode, normalizedNode);
-				} else {
+				if (cloneType == 1) {
 					addSubTreeToMap(x, x);
+				} else if (cloneType == 2) {
+					node normalizedNode = normalizeNodeDec(x);
+					addSubTreeToMap(normalizedNode, normalizedNode);
+				} else if (cloneType == 3) {
+					node normalizedNode = normalizeNodeDec(x);
+					addSubTreeToMap(normalizedNode, normalizedNode);
 				}
 			}
 		}
@@ -100,7 +98,7 @@ public void main() {
 				
 			for (treeRelation <- complementBucket) {
 				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0])*1.0;
-				println("similarityThreshold: <similarity>");
+				//println("similarityThreshold: <similarity>");
 				if (similarity >= similarityThreshold) {
 					if (cloneClasses[treeRelation[0][0]]?) {
 						cloneClasses[treeRelation[0][0]] += treeRelation;
@@ -133,8 +131,21 @@ public void main() {
 	
 	println("Removed all subclones from the cloneClasses");
 	println(printTime(now(), "HH:mm:ss"));
+	
+	// Removing all clones pairs with only one file
+	// @TODO Good or bad?
+	set[loc] amountOfClonePairsPerClass = {};
+	for (currentClass <- cloneClasses) {
+		amountOfClonePairsPerClass = {};
+		for (currentClone <- cloneClasses[currentClass]) {
+			amountOfClonePairsPerClass += currentClone[0][1];
+			amountOfClonePairsPerClass += currentClone[1][1];
+		}
+		if (size(amountOfClonePairsPerClass) == 1) {
+			cloneClasses = delete(cloneClasses, currentClass);
+		}
+	}
 		
-	/*
 	set[loc] clonePairsPerClass = {};
 	iprintln("Here come the clones!");
 	for (currentClass <- cloneClasses) {
@@ -149,13 +160,14 @@ public void main() {
 		}
 		iprintln("--------------------------------------------------");
 	}
-	*/
+	
 	//printCloneResults();
 	
 	// Step 2. Finding Clone Sequences
 	// THIS IS WORK IN PROGRESS!!!
-	findSequences(ast);
 	
+	findSequences(ast);
+	/*
 	iprintln("SEQUENCES!");
 	for (key <- cloneSequences) {
 		iprintln("Sequence Class");
@@ -168,77 +180,7 @@ public void main() {
 			}
 		}
 	}
-	
-	set[loc] clonePairsPerClass = {};
-	iprintln("Here come the clones!");
-	for (currentClass <- cloneClasses) {
-		iprintln("Total clone pairs in this class: <size(cloneClasses[currentClass])>");
-		clonePairsPerClass = {};
-		for (currentClone <- cloneClasses[currentClass]) {
-			clonePairsPerClass += currentClone[0][1];
-			clonePairsPerClass += currentClone[1][1];
-		}
-		for (uniqueClone <- clonePairsPerClass) {
-			iprintln(uniqueClone);
-		}
-		iprintln("--------------------------------------------------");
-	}
-
-	// Step 3. Generalizing clones
-	/*
-	clonesToGeneralize = clonePairs;
-	
-	while (currentClonePair <- clonesToGeneralize) {
-		clonesToGeneralize = clonesToGeneralize - currentClonePair;
-		
-		//iprintln("Child");
-		//iprintln(currentClonePair[0][1]);
-		
-		list[node] parents = getParentsOfClone(currentClonePair[0][0]);		
-		// Dunno if this is required, but lets keep it for now just to be sure.
-		parents += getParentsOfClone(currentClonePair[1][0]);
-		parents = dup(parents);
-		
-		lrel[node,loc] parentsPairs = [];
-		for (parent <- parents) {
-			loc parentLocation = getLocationOfNode(parent);
-			parentsPairs += <parent, parentLocation>;
-		}
-		
-		//iprintln(size(parentsPairs));
-				
-		lrel[tuple[node,loc] L, tuple[node,loc] R] complementParents = [];
-		complementParents += parentsPairs * parentsPairs;
-		complementParents = [p | p <- complementParents, p.L != p.R];
-		complementParents = removeSymmetricPairs(complementParents);
-		
-		//iprintln("Amount of parent pairs: <size(complementParents)>");
-		
-		for (parentRelation <- complementParents) {
-			num similarity = calculateSimilarity(parentRelation[0][0],parentRelation[1][0]);
-			//iprintln("Parent simi <similarity>");
-			//iprintln(parentRelation[0][1]);
-			//iprintln(parentRelation[1][1]);
-			
-			if (similarity > similarityThreshold) {
-				//iprintln("So we found a parent which matches");
-				clonePairs = clonePairs - currentClonePair;
-				
-				clonePairs += parentRelation; 
-				clonesToGeneralize += parentRelation;
-			} else {
-				//iprintln("So we did not find a parent which matches");
-				int a;
-			}
-		}
-		//iprintln("End loop iteration");
-		//iprintln("----------------------------------");
-	}
 	*/
-	//printCloneResults();
-	
-	//iprintln(transfer(cloneClasses));
-	
 }
 
 // Normalize all variable types of the leaves in a tree.
@@ -246,11 +188,13 @@ public node normalizeNodeDec(node ast) {
 	return visit (ast) {
 		case \Type(_) => \Type(char())
 		case \Modifier(_) => \Type(\private())
-		case \simpleName(_) => \simpleName("a")
-		case \number(_) => \number("1")
+		case \simpleName(_) => \simpleName("simpleName")
+		case \number(_) => \number("1337")
+		case \variable(x,y) => \variable("variableName",y) 
+		case \variable(x,y,z) => \variable("variableName",y,z) 
 		case \booleanLiteral(_) => \booleanLiteral(true)
-		case \stringLiteral(_) => \stringLiteral("b")
-		case \characterLiteral(_) => \characterLiteral("c")
+		case \stringLiteral(_) => \stringLiteral("StringLiteralThingy")
+		case \characterLiteral(_) => \characterLiteral("q")
 	}
 }
 
@@ -494,7 +438,11 @@ public loc getLocationOfNode(node subTree) {
 	return location;
 }
 
-public void addSubTreeToMap(node normalizedSubTree, node subTree) {
+public void addSubTreeToMap(node key, node subTree) {
+
+	//if (cloneType == 3) {
+	//	key = checkForSimilarBucket(key);
+	//}
 
 	loc location = getLocationOfNode(subTree);
 	
@@ -502,10 +450,29 @@ public void addSubTreeToMap(node normalizedSubTree, node subTree) {
 		return;
 	}
 	
-	if (buckets[normalizedSubTree]?) {
-		buckets[normalizedSubTree] += <subTree,location>;
+	if (buckets[key]?) {
+		buckets[key] += <subTree,location>;
 	} else {
-		buckets[normalizedSubTree] = [<subTree,location>];
+		buckets[key] = [<subTree,location>];
+	}
+}
+
+public node checkForSimilarBucket(node normalizedSubTreeKey) {
+	lrel[node, loc] highestSimilarityBucket;
+	real highestSimilarity = 0.00;
+	
+	for (bucket <- buckets) {
+		real similarity = calculateSimilarity(bucket, normalizedSubTreeKey)*1.0;
+		if (similarity >= similarityThreshold && similarity > highestSimilarity) {
+			highestSimilarity = similarity;
+			highestSimilarityBucket = bucket;
+		}
+	}
+		
+	if (highestSimilarity > 0) {
+		return highestSimilarityBucket;
+	} else {
+		return normalizedSubTreeKey;
 	}
 }
 

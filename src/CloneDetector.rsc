@@ -53,6 +53,8 @@ int cloneType;
 public void main(int cloneT) {
 	cloneType = cloneT;
 	
+	massThreshold = 25;
+	
 	iprintln("Attack of the clones!");
 	println(printTime(now(), "HH:mm:ss"));
 	
@@ -68,7 +70,6 @@ public void main(int cloneT) {
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
-	massThreshold = 25;
 	if (cloneType == 1) {
 	    similarityThreshold = 1.0;
   	} else if(cloneType == 2) {
@@ -214,9 +215,11 @@ public node normalizeNodeDec(node ast) {
 		case \interface(_, x, y, z) => \interface("interfaceName", x, y, z)
 		case \class(_, x, y, z) => \class("className", x, y, z)
 		case \enumConstant(_, y) => \enumConstant("enumName", y) 
-		case \enumConstant(_, y, z) => \enumConstant("enumName", y, z) 
-		case \Type(_) => \Type(char())
-		case \Modifier(_) => \Type(\private())
+		case \enumConstant(_, y, z) => \enumConstant("enumName", y, z)
+		case \methodCall(x, _, z) => \methodCall(x, "methodCall", z)
+		case \methodCall(x, y, _, z) => \methodCall(x, y, "methodCall", z) 
+		case Type _ => lang::java::jdt::m3::AST::short()
+		case Modifier _ => lang::java::jdt::m3::AST::\private()
 		case \simpleName(_) => \simpleName("simpleName")
 		case \number(_) => \number("1337")
 		case \variable(x,y) => \variable("variableName",y) 
@@ -456,15 +459,22 @@ public loc getLocationOfNode(node subTree) {
 		if (s@src?) {
 			location = s@src;
 		}
-	} else if (Type t := subTree) {
+	}/* else if (Type t := subTree) {
 		iprintln("WTF THIS IS A TYPE!");
 	} else if (Modifier m := subTree) {
 		iprintln("WTF THIS IS A MODIFIER!");
 	} else {
 		iprintln("WTF IS THIS?!");
-	}
+	}*/
 	
 	return location;
+}
+
+public bool minimumCloneSizeCheck(loc key) {
+	if (key.end.line - key.begin.line  >= 6) {
+		return true;
+	}
+	return false;
 }
 
 public void addSubTreeToMap(node key, node subTree) {
@@ -476,6 +486,10 @@ public void addSubTreeToMap(node key, node subTree) {
 	loc location = getLocationOfNode(subTree);
 	
 	if (location == currentProject) {
+		return;
+	}
+	
+	if (minimumCloneSizeCheck(location) == false) {
 		return;
 	}
 	

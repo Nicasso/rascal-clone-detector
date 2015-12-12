@@ -3,8 +3,8 @@ module Helper
 import IO;
 import String;
 
-public real computeLOC(loc location){
-	real count = 0.0;
+public int computeLOC(loc location){
+	int count = 0;
 	str content = readFile(location);
 	commentFree = visit(content){
 		case /(\/\*[\s\S]*?\*\/|\/\/[\s\S]*?(\n|\r))/ => ""

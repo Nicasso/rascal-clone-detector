@@ -26,8 +26,8 @@ public list[loc] filesInLocation = [];
 public list[Figure] dirBoxList = [];
 public list[Figure] fileBoxList = [];
 public str textField = "";
-public str noCloneColor = "White";
-public str fullCloneColor = "Red";
+public Color noCloneColor = color("White");
+public Color fullCloneColor = color("Red");
 public str defaultDirColor = "LightGrey";
 public str highlightDirColor = "DarkGrey";
 public str defaultFileColor = "LightCyan";
@@ -37,7 +37,7 @@ public loc currentLocation = Vis::startLocation;
 
 public void main(){
 	//buildFileInformation();
-	//CloneDetector::main();
+	CloneDetector::main();
 	startVisualization();
 }
 
@@ -96,7 +96,7 @@ public void createFileAndDirBoxes(){
 			for(file <- CloneDetector::fileInformation){
 				if(file.location == location){
 					boxArea = file.LOC;
-					percentage = file.percentage;
+					percentage = (file.percentage) * 2;
 					break;
 				}
 			}

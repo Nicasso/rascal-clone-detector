@@ -21,7 +21,7 @@ import Helper;
 
 //public loc currentProject = |project://TestProject|;
 public loc currentProject = |project://smallsql0.21_src|;
-public loc currentProject2 = |file:///C:/Users/Ardavan/RCPworkspace/smallsql0.21_src|;
+public loc currentProject2 = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
 //public loc currentProject = |project://hsqldb-2.3.1|;
 
 map[node, lrel[node, loc]] buckets = ();
@@ -66,7 +66,7 @@ public void main() {
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
 
-	massThreshold = 5;
+	massThreshold = 25;
 	if (cloneType == 1 || cloneType == 2) {
 		similarityThreshold = 1.0;
 	} else {
@@ -245,8 +245,6 @@ public void main() {
 	allFiles = getAllJavaFiles();
 	
 	fileInformation = transfer(cloneClasses, allFiles);
-	
-	iprintln(fileInformation);
 	
 }
 
@@ -550,20 +548,17 @@ public lrel[loc,int, real,set[loc]] transfer(map[node, lrel[tuple[node,loc],tupl
 		}
 	}
 	for(file <- allFiles){
-		real linesOfFile = computeLOC(file);
-		real linesOfClones = 0.0;
+		int linesOfFile = computeLOC(file);
+		int linesOfClones = 0;
 		real percentage = 0.0;
 		set[loc] clones = {};
 		for(clone <- allClones){
-			iprintln(file);
-			iprintln(toLocation(clone.uri));
-			println();
 			if(file == toLocation(clone.uri)){
 				linesOfClones += computeLOC(clone);
 				clones += clone;
 			}
 		}
-		percentage = linesOfClones/linesOfFile;
+		percentage = toReal(linesOfClones) / toReal(linesOfFile);
 		result += <file, linesOfFile, percentage, clones>; 
 	}
 	return result;

@@ -5,6 +5,7 @@ import lang::java::m3::Core;
 import lang::java::jdt::m3::Core;
 import lang::java::jdt::m3::AST;
 import demo::common::Crawl;
+import util::Math;
 import IO;
 import List;
 import Map;
@@ -22,6 +23,8 @@ import Helper;
 
 public loc currentProject = |project://TestProject|;
 //public loc currentProject = |project://smallsql0.21_src|;
+//public loc currentProject2 = |file:///C:/Users/Ardavan/RCPworkspace/smallsql0.21_src|;
+public loc currentProject2 = |project://TestProject|;
 //public loc currentProject = |project://hsqldb-2.3.1|;
 
 map[node, lrel[node, loc]] buckets = ();
@@ -31,6 +34,10 @@ map[list[node], list[lrel[tuple[node, loc], tuple[node, loc]]]] cloneSequences =
 list[node] subCloneClasses = [];
 //map[list[Statement],list[Statement]] allSequences = ();
 list[lrel[node,loc]] allSequences = [];
+
+list[loc] allFiles = [];
+public lrel[loc location,int LOC, real percentage, set[loc] clones] fileInformation = [];
+
 lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
 set[Declaration] ast;
 
@@ -56,6 +63,7 @@ public void main(int cloneT) {
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
+
 	massThreshold = 5;
 	if (cloneType == 1) {
 	    similarityThreshold = 1.0;
@@ -128,7 +136,7 @@ public void main(int cloneT) {
 	for (subCloneClas <- subCloneClasses) {
 		cloneClasses = delete(cloneClasses, subCloneClas);
 	}
-	
+
 	println("Removed all subclones from the cloneClasses");
 	println(printTime(now(), "HH:mm:ss"));
 	
@@ -181,6 +189,13 @@ public void main(int cloneT) {
 		}
 	}
 	*/
+	
+	allFiles = getAllJavaFiles();
+	
+	fileInformation = transfer(cloneClasses, allFiles);
+	
+	iprintln(fileInformation);
+	
 }
 
 // Normalize all variable types of the leaves in a tree.
@@ -498,28 +513,56 @@ public int calculateMass(node currentNode) {
 	return mass;
 }
 
-public list[lrel[loc,int,loc,int]] transfer(map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses){
-	list[lrel[loc,int,loc,int]] result = [];
-	set[set[loc]] allClones = {
-		{
-			*{clonePair[0][1], clonePair[1][1]}
-		|
-			clonePair <- cloneClasses[cloneClass]
+public lrel[loc,int, real,set[loc]] transfer(map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses, list[loc] allFiles){
+	lrel[loc,int, real,set[loc]] result = [];
+	set[loc] allClones = {};
+	for(cloneClass <- cloneClasses){
+		for(clonePair <- cloneClasses[cloneClass]){
+			allClones += clonePair[0][1];
+			allClones += clonePair[1][1];
 		}
-	|
-		cloneClass <- cloneClasses
-	};
-	for(cloneClass <- allClones){
-		lrel[loc,int,loc,int] temp = [];
-			for(location <- cloneClass){
-				 //<location of clone,
-				 // number of lines for the clone,
-				 // location of it's parent,
-				 // number of lines for the parent>
-				loc parent = toLocation(location.uri); 
-				temp += <location, computeLOC(location), parent, computeLOC(parent)>;   
+	}
+	for(file <- allFiles){
+		real linesOfFile = computeLOC(file);
+		real linesOfClones = 0.0;
+		real percentage = 0.0;
+		set[loc] clones = {};
+		for(clone <- allClones){
+			iprintln(file);
+			iprintln(toLocation(clone.uri));
+			println();
+			if(file == toLocation(clone.uri)){
+				linesOfClones += computeLOC(clone);
+				clones += clone;
 			}
-		result += [temp];
+		}
+		percentage = linesOfClones/linesOfFile;
+		result += <file, linesOfFile, percentage, clones>; 
 	}
 	return result;
+	//set[set[loc]] allClones = {
+	//	{
+	//		*{clonePair[0][1], clonePair[1][1]}
+	//	|
+	//		clonePair <- cloneClasses[cloneClass]
+	//	}
+	//|
+	//	cloneClass <- cloneClasses
+	//};
+	//for(cloneClass <- allClones){
+	//	lrel[loc,int,loc,int] temp = [];
+	//		for(location <- cloneClass){
+	//			 //<location of clone,
+	//			 // number of lines for the clone,
+	//			 // location of it's parent,
+	//			 // number of lines for the parent>
+	//			loc parent = toLocation(location.uri); 
+	//			temp += <location, computeLOC(location), parent, computeLOC(parent)>;   
+	//		}
+	//	result += [temp];
+	//}
+}
+
+public list[loc] getAllJavaFiles() {
+	return crawl(currentProject2, ".java");
 } 

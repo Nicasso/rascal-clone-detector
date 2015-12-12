@@ -26,16 +26,18 @@ public list[loc] filesInLocation = [];
 public list[Figure] dirBoxList = [];
 public list[Figure] fileBoxList = [];
 public str textField = "";
-public lrel[loc location, int LOC] fileInformation = [];
+public str noCloneColor = "White";
+public str fullCloneColor = "Red";
 public str defaultDirColor = "LightGrey";
 public str highlightDirColor = "DarkGrey";
 public str defaultFileColor = "LightCyan";
 public str highlightFileColor = "PaleTurquoise";
-public loc currentProject = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
-public loc currentLocation = Vis::currentProject;
+public loc startLocation = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
+public loc currentLocation = Vis::startLocation;
 
 public void main(){
-	buildFileInformation();
+	//buildFileInformation();
+	//CloneDetector::main();
 	startVisualization();
 }
 
@@ -54,7 +56,7 @@ public void clearMemory(){
 }
 
 public void createGoUpDirBox(){
-	if(Vis::currentLocation != Vis::currentProject){
+	if(Vis::currentLocation != Vis::startLocation){
 		bool highlight = false;
 		Vis::dirBoxList += box(
 						text("..."),
@@ -90,15 +92,17 @@ public void createFileAndDirBoxes(){
 		} else if(location.extension == "java"){
 			bool highlight = false;
 			int boxArea;
-			for(file <- Vis::fileInformation){
+			real percentage;
+			for(file <- CloneDetector::fileInformation){
 				if(file.location == location){
 					boxArea = file.LOC;
+					percentage = file.percentage;
 					break;
 				}
 			}
 			Vis::fileBoxList += box(
 								area(boxArea),
-								fillColor(Color () { return highlight ? color(Vis::highlightFileColor) : color(Vis::defaultFileColor);}),
+								fillColor(interpolateColor(Vis::noCloneColor, Vis::fullCloneColor, percentage)),
 								onMouseEnter(void () {highlight = true; Vis::textField = tmploc.file + " (<boxArea> LOC)";}), 
 								onMouseExit(void () {highlight = false; Vis::textField = "";}),
 								onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
@@ -116,19 +120,13 @@ public void createFileAndDirBoxes(){
 	}
 }
 
-public void buildFileInformation(){
-	for(location <- crawl(Vis::currentProject, ".java")){
-		Vis::fileInformation += <location, Helper::computeLOC(location)>;
-	}
-}
-
 public void viewFile(){
 	clearMemory();
 	createGoUpDirBox();
 	Vis::textField = "Click on file to edit";
 	bool highlight = false;
 	int boxArea;
-	for(file <- Vis::fileInformation){
+	for(file <- CloneDetector::fileInformation){
 		if(file.location == Vis::currentLocation){
 			boxArea = file.LOC;
 			break;

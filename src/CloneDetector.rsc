@@ -27,6 +27,9 @@ public loc currentProject2 = |file:///C:/Users/Ardavan/RCPworkspace/smallsql0.21
 map[node, lrel[node, loc]] buckets = ();
 
 map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();
+
+map[node, lrel[tuple[node, loc], tuple[node, loc]]] toBeRemoved = ();
+
 map[list[node], list[lrel[tuple[node, loc], tuple[node, loc]]]] cloneSequences = ();
 
 list[node] subCloneClasses = [];
@@ -41,6 +44,8 @@ lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
 set[Declaration] ast;
 
 int massThreshold;
+real similarityThreshold;
+int cloneType;
 
 public void main() {
 	iprintln("Attack of the clones!");
@@ -51,13 +56,22 @@ public void main() {
 	subCloneClasses = [];
 	allSequences = [];
 	clonesToGeneralize = [];
+	
+	toBeRemoved = ();
+	
+	cloneType = 1;
 
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
-	massThreshold = 25;
-	real similarityThreshold = 0.75;
+
+	massThreshold = 5;
+	if (cloneType == 1 || cloneType == 2) {
+		similarityThreshold = 1.0;
+	} else {
+		similarityThreshold = 0.75;
+	}
 	
 	// Step 1. Finding Sub-tree Clones
 	
@@ -65,8 +79,15 @@ public void main() {
 	visit (ast) {
 		case node x: {
 			if (calculateMass(x) >= massThreshold) {
-				node normalizedNode = normalizeNodeDec(x);
-				addSubTreeToMap(normalizedNode, x);
+				if (cloneType == 2 || cloneType == 3) {
+					node normalizedNode = normalizeNodeDec(x);
+					
+					// @TODO Which one is it?
+					//addSubTreeToMap(normalizedNode, x);
+					addSubTreeToMap(normalizedNode, normalizedNode);
+				} else {
+					addSubTreeToMap(x, x);
+				}
 			}
 		}
 	}
@@ -86,8 +107,7 @@ public void main() {
 			for (treeRelation <- complementBucket) {
 				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0])*1.0;
 				println("similarityThreshold: <similarity>");
-				if (similarity > similarityThreshold) {
-					
+				if (similarity >= similarityThreshold) {
 					if (cloneClasses[treeRelation[0][0]]?) {
 						cloneClasses[treeRelation[0][0]] += treeRelation;
 					} else {
@@ -116,29 +136,31 @@ public void main() {
 	for (subCloneClas <- subCloneClasses) {
 		cloneClasses = delete(cloneClasses, subCloneClas);
 	}
-	
-	//println("Removed all subclones from the cloneClasses");
-	//println(printTime(now(), "HH:mm:ss"));
-	//	
-	//set[loc] clonePairsPerClass = {};
-	//iprintln("Here come the clones!");
-	//for (currentClass <- cloneClasses) {
-	//	iprintln("Total clone pairs in this class: <size(cloneClasses[currentClass])>");
-	//	clonePairsPerClass = {};
-	//	for (currentClone <- cloneClasses[currentClass]) {
-	//		clonePairsPerClass += currentClone[0][1];
-	//		clonePairsPerClass += currentClone[1][1];
-	//	}
-	//	for (uniqueClone <- clonePairsPerClass) {
-	//		iprintln(uniqueClone);
-	//	}
-	//	iprintln("--------------------------------------------------");
-	//}
-	
+
+	println("Removed all subclones from the cloneClasses");
+	println(printTime(now(), "HH:mm:ss"));
+		
+	/*
+	set[loc] clonePairsPerClass = {};
+	iprintln("Here come the clones!");
+	for (currentClass <- cloneClasses) {
+		iprintln("Total clone pairs in this class: <size(cloneClasses[currentClass])>");
+		clonePairsPerClass = {};
+		for (currentClone <- cloneClasses[currentClass]) {
+			clonePairsPerClass += currentClone[0][1];
+			clonePairsPerClass += currentClone[1][1];
+		}
+		for (uniqueClone <- clonePairsPerClass) {
+			iprintln(uniqueClone);
+		}
+		iprintln("--------------------------------------------------");
+	}
+	*/
 	//printCloneResults();
 	
 	// Step 2. Finding Clone Sequences
 	// THIS IS WORK IN PROGRESS!!!
+
 	//findSequences(ast);
 	//
 	//iprintln("WOOT");
@@ -152,14 +174,20 @@ public void main() {
 	//	}
 	//}
 	
-	//for (currentClass <- cloneClasses) {
-	//	for (currentClone <- cloneClasses[currentClass]) {
-	//		int a;
-	//	}
-	//}
-	
-	
-	
+	set[loc] clonePairsPerClass = {};
+	iprintln("Here come the clones!");
+	for (currentClass <- cloneClasses) {
+		iprintln("Total clone pairs in this class: <size(cloneClasses[currentClass])>");
+		clonePairsPerClass = {};
+		for (currentClone <- cloneClasses[currentClass]) {
+			clonePairsPerClass += currentClone[0][1];
+			clonePairsPerClass += currentClone[1][1];
+		}
+		for (uniqueClone <- clonePairsPerClass) {
+			iprintln(uniqueClone);
+		}
+		iprintln("--------------------------------------------------");
+	}
 
 	// Step 3. Generalizing clones
 	/*
@@ -237,25 +265,43 @@ public node normalizeNodeDec(node ast) {
 
 // Work in progess
 public void findSequences(set[Declaration] ast) {
-	blocks = [[<n, n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
+	list[lrel[node,loc]] blocks = [];
 	
-	//iprintln("Total amount of sequences found: <size(blocks)>");
+	if (cloneType == 1) {
+		blocks = [[<n, n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
+	} else if (cloneType == 2 || cloneType == 3) {
+		blocks = [[<normalizeNodeDec(n), n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
+	}
+		
 	for (block <- blocks) {
 		// if the current block does not contain any clones then we remove it.
 		if (!containsClone(block)) {
-			//delete(blocks, indexOf(blocks,block));
 			blocks = blocks - [block];
 		}
 	}
-	//iprintln("Total amount of sequences left: <size(blocks)>");
 }
 
 public void addCloneSequence(list[node] key, lrel[tuple[node, loc], tuple[node, loc]] sequence) {
 	if (cloneSequences[key]?) {
-		cloneSequences[key] += [sequence];
+		if (!checkExistanceCloneSequence(sequence)) {
+			//iprintln("APPEND NEW SEQUENCE");
+			cloneSequences[key] += [sequence];
+		}
 	} else {
+		//iprintln("CREATE FIRST SEQUENCE");
 		cloneSequences[key] = [sequence];
 	}
+}
+
+public bool checkExistanceCloneSequence(lrel[tuple[node, loc], tuple[node, loc]] target) {
+	for (sequenceClass <- cloneSequences) {
+		for (sequence <- cloneSequences[sequenceClass]) {
+			if (target == sequence) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 public bool containsClone(list[tuple[node,loc]] block) {
@@ -265,22 +311,31 @@ public bool containsClone(list[tuple[node,loc]] block) {
 	
 	bool added = false;
 	bool containsClones = false;
-			
+	
+	//iprintln("CONTAINSCLONES");		
+	
 	for (stmt <- block) {
 		added = false;
+		//iprintln(stmt[1]);
 		for (currentClass <- cloneClasses) {
 			for (currentClone <- cloneClasses[currentClass]) {
 				if (stmt[0] == currentClone[0][0] || stmt[0] == currentClone[1][0]) {
-					//iprintln("Found a clone");
-					//iprintln(currentClone[0][1]);
 					added = true;
 					tmpSequence += currentClone;
+					//iprintln("Found a clone!");
 					currentKey += stmt[0];
-					continue;
+					// REALLY? DOES THIS MAKE UNIQUE SEQUENCES?
+					cloneClasses[currentClass] = cloneClasses[currentClass] - currentClone;
+
+					if (size(cloneClasses[currentClass]) == 0) {
+						cloneClasses = delete(cloneClasses, currentClass);
+					}
+					break;
 				}
 			}
+			
 			if (added == true) {
-				continue;
+				break;
 			}
 		}
 		
@@ -316,7 +371,6 @@ public void printCloneResults() {
 	}
 }
 
-// @TODO The performance of this method is super crap! Takes ages too finish!
 public void checkForInnerClones(tuple[node,loc] tree) {
 	visit (tree[0]) {
 		case node x: {

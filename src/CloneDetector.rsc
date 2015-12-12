@@ -22,8 +22,14 @@ import Traversal;
 import Helper;
 
 //public loc currentProject = |project://TestProject|;
+//public loc currentProject2 = |file://C:/Users/Nico/workspace/TestProject/|;
+
+//public loc currentProject = |project://smallsql0.21_src|;
+//public loc currentProject2 = |file://C:/Users/Nico/workspace/smallsql0.21_src/|;
+
 public loc currentProject = |project://smallsql0.21_src|;
 public loc currentProject2 = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
+
 //public loc currentProject = |project://hsqldb-2.3.1|;
 
 map[node, lrel[node, loc]] buckets = ();
@@ -62,7 +68,6 @@ public void main(int cloneT) {
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
-
 	massThreshold = 25;
 	if (cloneType == 1) {
 	    similarityThreshold = 1.0;
@@ -198,6 +203,18 @@ public void main(int cloneT) {
 // Normalize all variable types of the leaves in a tree.
 public node normalizeNodeDec(node ast) {
 	return visit (ast) {
+		case \method(x, _, y, z, q) => \method(lang::java::jdt::m3::AST::short(), "methodName", y, z, q)
+		case \method(x, _, y, z) => \method(lang::java::jdt::m3::AST::short(), "methodName", y, z)
+		case \parameter(x, _, z) => \parameter(x, "paramName", z)
+		case \vararg(x, _) => \vararg(x, "varArgName") 
+		case \annotationTypeMember(x, _) => \annotationTypeMember(x, "annonName")
+		case \annotationTypeMember(x, _, y) => \annotationTypeMember(x, "annonName", y)
+		case \typeParameter(_, x) => \typeParameter("typeParaName", x)
+		case \constructor(_, x, y, z) => \constructor("constructorName", x, y, z)
+		case \interface(_, x, y, z) => \interface("interfaceName", x, y, z)
+		case \class(_, x, y, z) => \class("className", x, y, z)
+		case \enumConstant(_, y) => \enumConstant("enumName", y) 
+		case \enumConstant(_, y, z) => \enumConstant("enumName", y, z) 
 		case \Type(_) => \Type(char())
 		case \Modifier(_) => \Type(\private())
 		case \simpleName(_) => \simpleName("simpleName")

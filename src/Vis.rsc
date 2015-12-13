@@ -30,10 +30,11 @@ public Color noCloneColor = color("White");
 public Color fullCloneColor = color("Red");
 public str defaultDirColor = "LightGrey";
 public str highlightDirColor = "DarkGrey";
-public loc startLocation = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
+
+public loc startLocation = |file:///Users/nicodegroot/Documents/workspace/smallsql0.21_src|;
 public loc currentLocation = Vis::startLocation;
 
-public void main(int cloneType) {
+public void mainVis(int cloneType) {
 	CloneDetector::main(cloneType);
 	startVisualization();
 }

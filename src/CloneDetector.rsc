@@ -24,12 +24,17 @@ import UnitTests;
 
 //public loc currentProject = |project://TestProject|;
 //public loc currentProject2 = |file://C:/Users/Nico/workspace/TestProject/|;
-
-//public loc currentProject = |project://smallsql0.21_src|;
-//public loc currentProject2 = |file://C:/Users/Nico/workspace/smallsql0.21_src/|;
+//public loc currentProject2 = |file:///Users/nicodegroot/Documents/workspace/TestProject|;
 
 public loc currentProject = |project://smallsql0.21_src|;
-public loc currentProject2 = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
+//public loc currentProject2 = |file://C:/Users/Nico/workspace/smallsql0.21_src/|;
+public loc currentProject2 = |file:///Users/nicodegroot/Documents/workspace/smallsql0.21_src|;
+
+//public loc currentProject = |project://hsqldb-2.3.1|;
+//public loc currentProject2 = |file:///Users/nicodegroot/Documents/workspace/hsqldb-2.3.1|;
+
+//public loc currentProject = |project://smallsql0.21_src|;
+//public loc currentProject2 = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
 
 //public loc currentProject = |project://hsqldb-2.3.1|;
 
@@ -112,7 +117,7 @@ public void main(int cloneT) {
 				
 			for (treeRelation <- complementBucket) {
 				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0])*1.0;
-				//println("similarityThreshold: <similarity>");
+				println("Similarity: <similarity> \>= <similarityThreshold>");
 				if (similarity >= similarityThreshold) {
 					if (cloneClasses[treeRelation[0][0]]?) {
 						cloneClasses[treeRelation[0][0]] += treeRelation;
@@ -164,8 +169,8 @@ public void main(int cloneT) {
 	printCloneResults();
 	
 	allFiles = getAllJavaFiles();
+
 	fileInformation = transfer(cloneClasses, allFiles);
-	
 }
 
 // @TODO CHECK IF THIS IS NOT TOO MUCH!

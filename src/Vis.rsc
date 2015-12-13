@@ -53,7 +53,7 @@ public void clearMemory(){
 }
 
 public void createGoUpDirBox(){
-	if(Vis::currentLocation != Vis::startLocation){
+	if(Vis::currentLocation != Config::startLocation){
 		bool highlight = false;
 		Vis::dirBoxList += box(
 						text("..."),

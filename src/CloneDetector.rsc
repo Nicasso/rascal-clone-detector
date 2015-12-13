@@ -75,7 +75,7 @@ public void main(int cloneT) {
   	} else if(cloneType == 2) {
 	    similarityThreshold = 1.0;
   	} else if(cloneType == 3) {
-		similarityThreshold = 0.75;
+		similarityThreshold = 0.50;
   	}
 	
 	// Step 1. Finding Sub-tree Clones
@@ -91,7 +91,7 @@ public void main(int cloneT) {
 					addSubTreeToMap(normalizedNode, normalizedNode);
 				} else if (cloneType == 3) {
 					node normalizedNode = normalizeNodeDec(x);
-					addSubTreeToMap(normalizedNode, normalizedNode);
+					addSubTreeToMap(normalizedNode, x);
 				}
 			}
 		}
@@ -158,7 +158,9 @@ public void main(int cloneT) {
 			cloneClasses = delete(cloneClasses, currentClass);
 		}
 	}
-		
+	
+	int counting = 0;
+	
 	set[loc] clonePairsPerClass = {};
 	iprintln("Here come the clones!");
 	for (currentClass <- cloneClasses) {
@@ -170,16 +172,20 @@ public void main(int cloneT) {
 		}
 		for (uniqueClone <- clonePairsPerClass) {
 			iprintln(uniqueClone);
+			counting += 1;
 		}
 		iprintln("--------------------------------------------------");
 	}
+	
+	iprintln("TOTAL <counting>");
 	
 	//printCloneResults();
 	
 	// Step 2. Finding Clone Sequences
 	// THIS IS WORK IN PROGRESS!!!
 	
-	findSequences(ast);
+	//findSequences(ast);
+	
 	/*
 	iprintln("SEQUENCES!");
 	for (key <- cloneSequences) {

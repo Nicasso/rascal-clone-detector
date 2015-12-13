@@ -35,9 +35,9 @@ public str highlightFileColor = "PaleTurquoise";
 public loc startLocation = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
 public loc currentLocation = Vis::startLocation;
 
-public void main(){
+public void main(int cloneType) {
 	//buildFileInformation();
-	CloneDetector::main();
+	CloneDetector::main(cloneType);
 	startVisualization();
 }
 

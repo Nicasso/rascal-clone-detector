@@ -21,6 +21,7 @@ import DateTime;
 
 import CloneDetector;
 import Helper;
+import Config;
 
 public list[loc] filesInLocation = [];
 public list[Figure] dirBoxList = [];
@@ -31,7 +32,7 @@ public Color fullCloneColor = color("Red");
 public str defaultDirColor = "LightGrey";
 public str highlightDirColor = "DarkGrey";
 
-public loc startLocation = |file:///Users/nicodegroot/Documents/workspace/smallsql0.21_src|;
+
 public loc currentLocation = Vis::startLocation;
 
 public void mainVis(int cloneType) {

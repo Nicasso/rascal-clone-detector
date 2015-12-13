@@ -20,6 +20,7 @@ import util::Math;
 import DateTime;
 import Traversal;
 import Helper;
+import UnitTests;
 
 //public loc currentProject = |project://TestProject|;
 //public loc currentProject2 = |file://C:/Users/Nico/workspace/TestProject/|;
@@ -137,6 +138,7 @@ public void main(int cloneT) {
 	println("Indexed all thesmaller subclones");
 	println(printTime(now(), "HH:mm:ss"));
 	
+	//@TODO CHECK IF THIS REALLY DELETES ANYTHING! 
 	// Remove the subclones one by one from the cloneClasses.
 	for (subCloneClas <- subCloneClasses) {
 		cloneClasses = delete(cloneClasses, subCloneClas);
@@ -159,29 +161,12 @@ public void main(int cloneT) {
 		}
 	}
 	
-	int counting = 0;
-	
-	set[loc] clonePairsPerClass = {};
-	iprintln("Here come the clones!");
-	for (currentClass <- cloneClasses) {
-		iprintln("Total clone pairs in this class: <size(cloneClasses[currentClass])>");
-		clonePairsPerClass = {};
-		for (currentClone <- cloneClasses[currentClass]) {
-			clonePairsPerClass += currentClone[0][1];
-			clonePairsPerClass += currentClone[1][1];
-		}
-		for (uniqueClone <- clonePairsPerClass) {
-			iprintln(uniqueClone);
-			counting += 1;
-		}
-		iprintln("--------------------------------------------------");
-	}
-	
-	iprintln("TOTAL <counting>");
+	printCloneResults();
 	
 	
 }
 
+// @TODO CHECK IF THIS IS NOT TOO MUCH!
 // Normalize all variable types of the leaves in a tree.
 public node normalizeNodeDec(node ast) {
 	return visit (ast) {
@@ -211,112 +196,28 @@ public node normalizeNodeDec(node ast) {
 	}
 }
 
-// Work in progess
-public void findSequences(set[Declaration] ast) {
-	list[lrel[node,loc]] blocks = [];
-	
-	if (cloneType == 1) {
-		blocks = [[<n, n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
-	} else if (cloneType == 2 || cloneType == 3) {
-		blocks = [[<normalizeNodeDec(n), n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
-	}
-		
-	for (block <- blocks) {
-		// if the current block does not contain any clones then we remove it.
-		if (!containsClone(block)) {
-			blocks = blocks - [block];
-		}
-	}
-}
-
-public void addCloneSequence(list[node] key, lrel[tuple[node, loc], tuple[node, loc]] sequence) {
-	if (cloneSequences[key]?) {
-		if (!checkExistanceCloneSequence(sequence)) {
-			//iprintln("APPEND NEW SEQUENCE");
-			cloneSequences[key] += [sequence];
-		}
-	} else {
-		//iprintln("CREATE FIRST SEQUENCE");
-		cloneSequences[key] = [sequence];
-	}
-}
-
-public bool checkExistanceCloneSequence(lrel[tuple[node, loc], tuple[node, loc]] target) {
-	for (sequenceClass <- cloneSequences) {
-		for (sequence <- cloneSequences[sequenceClass]) {
-			if (target == sequence) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-public bool containsClone(list[tuple[node,loc]] block) {
-	lrel[tuple[node, loc], tuple[node, loc]] tmpSequence = [];
-	
-	list[node] currentKey = [];
-	
-	bool added = false;
-	bool containsClones = false;
-	
-	//iprintln("CONTAINSCLONES");		
-	
-	for (stmt <- block) {
-		added = false;
-		//iprintln(stmt[1]);
-		for (currentClass <- cloneClasses) {
-			for (currentClone <- cloneClasses[currentClass]) {
-				if (stmt[0] == currentClone[0][0] || stmt[0] == currentClone[1][0]) {
-					added = true;
-					tmpSequence += currentClone;
-					//iprintln("Found a clone!");
-					currentKey += stmt[0];
-					// REALLY? DOES THIS MAKE UNIQUE SEQUENCES?
-					cloneClasses[currentClass] = cloneClasses[currentClass] - currentClone;
-
-					if (size(cloneClasses[currentClass]) == 0) {
-						cloneClasses = delete(cloneClasses, currentClass);
-					}
-					break;
-				}
-			}
-			
-			if (added == true) {
-				break;
-			}
-		}
-		
-		if (added == false && size(tmpSequence) > 1) {
-			//iprintln("Saving the current tmpSequence");
-			addCloneSequence(currentKey, tmpSequence);
-			containsClones = true;
-			
-			tmpSequence = [];
-			currentKey = [];
-		} else if (added == false && size(tmpSequence) == 1) {
-			//iprintln("Resetting the current tmpSequence");
-			tmpSequence = [];
-			currentKey = [];
-		}
-	}
-	
-	if (size(tmpSequence) > 0) {
-		addCloneSequence(currentKey, tmpSequence);
-		containsClones = true;
-	}
-		
-	return containsClones;
-}
-
 public void printCloneResults() {
 	println();
-	iprintln("Final clone pairs");
-	for (pair <- clonePairs) {
-		iprintln(pair[0][1]);
-		iprintln(pair[1][1]);
-		iprintln("----------------------------------------------------------------------------------------");
+	
+	int counting = 0;
+	
+	set[loc] clonePairsPerClass = {};
+	iprintln("Here come the clones!");
+	for (currentClass <- cloneClasses) {
+		iprintln("Total clone pairs in this class: <size(cloneClasses[currentClass])>");
+		clonePairsPerClass = {};
+		for (currentClone <- cloneClasses[currentClass]) {
+			clonePairsPerClass += currentClone[0][1];
+			clonePairsPerClass += currentClone[1][1];
+		}
+		for (uniqueClone <- clonePairsPerClass) {
+			iprintln(uniqueClone);
+			counting += 1;
+		}
+		iprintln("--------------------------------------------------");
 	}
+	
+	iprintln("TOTAL <counting>");
 }
 
 public void checkForInnerClones(tuple[node,loc] tree) {
@@ -440,29 +341,19 @@ public loc getLocationOfNode(node subTree) {
 		if (s@src?) {
 			location = s@src;
 		}
-	}/* else if (Type t := subTree) {
-		iprintln("WTF THIS IS A TYPE!");
-	} else if (Modifier m := subTree) {
-		iprintln("WTF THIS IS A MODIFIER!");
-	} else {
-		iprintln("WTF IS THIS?!");
-	}*/
+	}
 	
 	return location;
 }
 
 public bool minimumCloneSizeCheck(loc key) {
-	if (key.end.line - key.begin.line  >= 6) {
+	if (key.end.line - key.begin.line >= 6) {
 		return true;
 	}
 	return false;
 }
 
 public void addSubTreeToMap(node key, node subTree) {
-
-	//if (cloneType == 3) {
-	//	key = checkForSimilarBucket(key);
-	//}
 
 	loc location = getLocationOfNode(subTree);
 	
@@ -478,25 +369,6 @@ public void addSubTreeToMap(node key, node subTree) {
 		buckets[key] += <subTree,location>;
 	} else {
 		buckets[key] = [<subTree,location>];
-	}
-}
-
-public node checkForSimilarBucket(node normalizedSubTreeKey) {
-	lrel[node, loc] highestSimilarityBucket;
-	real highestSimilarity = 0.00;
-	
-	for (bucket <- buckets) {
-		real similarity = calculateSimilarity(bucket, normalizedSubTreeKey)*1.0;
-		if (similarity >= similarityThreshold && similarity > highestSimilarity) {
-			highestSimilarity = similarity;
-			highestSimilarityBucket = bucket;
-		}
-	}
-		
-	if (highestSimilarity > 0) {
-		return highestSimilarityBucket;
-	} else {
-		return normalizedSubTreeKey;
 	}
 }
 

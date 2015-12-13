@@ -179,31 +179,6 @@ public void main(int cloneT) {
 	
 	iprintln("TOTAL <counting>");
 	
-	//printCloneResults();
-	
-	// Step 2. Finding Clone Sequences
-	// THIS IS WORK IN PROGRESS!!!
-	
-	//findSequences(ast);
-	
-	/*
-	iprintln("SEQUENCES!");
-	for (key <- cloneSequences) {
-		iprintln("Sequence Class");
-		for (seq <- cloneSequences[key]) {
-			iprintln("Single sequence");
-			for (lol <- seq) {
-				iprintln(lol[0][1]);
-				iprintln(lol[1][1]);
-				iprintln("-------------------------------------------------------------------------");
-			}
-		}
-	}
-	*/
-	
-	allFiles = getAllJavaFiles();
-	
-	fileInformation = transfer(cloneClasses, allFiles);
 	
 }
 
@@ -523,18 +498,6 @@ public node checkForSimilarBucket(node normalizedSubTreeKey) {
 	} else {
 		return normalizedSubTreeKey;
 	}
-}
-
-public int findSubTrees(set[Declaration] ast, node dec) {
-	int occurrences = 0;
-	top-down visit (ast) {
-		case node x: {
-			if (x == dec) {
-				occurrences += 1;
-			}
-		}
-	}
-	return occurrences;
 }
 
 public int calculateMass(node currentNode) {

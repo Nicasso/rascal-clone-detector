@@ -26,16 +26,11 @@ import Vis;
 
 map[node, lrel[node, loc]] buckets = ();
 map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();
-map[node, lrel[tuple[node, loc], tuple[node, loc]]] toBeRemoved = ();
-map[list[node], list[lrel[tuple[node, loc], tuple[node, loc]]]] cloneSequences = ();
 list[node] subCloneClasses = [];
-//map[list[Statement],list[Statement]] allSequences = ();
-list[lrel[node,loc]] allSequences = [];
 
 list[loc] allFiles = [];
 public lrel[loc location,int LOC, real percentage, set[loc] clones] fileInformation = [];
 
-lrel[tuple[node,loc],tuple[node,loc]] clonesToGeneralize = [];
 set[Declaration] ast;
 
 int massThreshold;
@@ -53,11 +48,7 @@ public void main(int cloneT) {
 	buckets = ();
 	cloneClasses = ();
 	subCloneClasses = [];
-	allSequences = [];
-	clonesToGeneralize = [];
 	
-	toBeRemoved = ();
-
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
@@ -103,7 +94,7 @@ public void main(int cloneT) {
 				
 			for (treeRelation <- complementBucket) {
 				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0])*1.0;
-				println("Similarity: <similarity> \>= <similarityThreshold>");
+				//println("Similarity: <similarity> \>= <similarityThreshold>");
 				if (similarity >= similarityThreshold) {
 					if (cloneClasses[treeRelation[0][0]]?) {
 						cloneClasses[treeRelation[0][0]] += treeRelation;
@@ -129,7 +120,6 @@ public void main(int cloneT) {
 	println("Indexed all thesmaller subclones");
 	println(printTime(now(), "HH:mm:ss"));
 	
-	//@TODO CHECK IF THIS REALLY DELETES ANYTHING! 
 	// Remove the subclones one by one from the cloneClasses.
 	for (subCloneClas <- subCloneClasses) {
 		cloneClasses = delete(cloneClasses, subCloneClas);
@@ -138,21 +128,7 @@ public void main(int cloneT) {
 	println("Removed all subclones from the cloneClasses");
 	println(printTime(now(), "HH:mm:ss"));
 	
-	// Removing all clones pairs with only one file
-	// @TODO Good or bad?
-	set[loc] amountOfClonePairsPerClass = {};
-	for (currentClass <- cloneClasses) {
-		amountOfClonePairsPerClass = {};
-		for (currentClone <- cloneClasses[currentClass]) {
-			amountOfClonePairsPerClass += currentClone[0][1];
-			amountOfClonePairsPerClass += currentClone[1][1];
-		}
-		if (size(amountOfClonePairsPerClass) == 1) {
-			cloneClasses = delete(cloneClasses, currentClass);
-		}
-	}
-	
-	printCloneResults();
+	//printCloneResults();
 	
 	allFiles = getAllJavaFiles();
 
@@ -202,15 +178,15 @@ public void printCloneResults() {
 		for (currentClone <- cloneClasses[currentClass]) {
 			clonePairsPerClass += currentClone[0][1];
 			clonePairsPerClass += currentClone[1][1];
+			counting += 1;
 		}
 		for (uniqueClone <- clonePairsPerClass) {
 			iprintln(uniqueClone);
-			counting += 1;
 		}
 		iprintln("--------------------------------------------------");
 	}
 	
-	iprintln("TOTAL <counting>");
+	iprintln("Total amount of clone pairs: <counting>");
 }
 
 public void checkForInnerClones(tuple[node,loc] tree) {
@@ -222,10 +198,12 @@ public void checkForInnerClones(tuple[node,loc] tree) {
 				if (location == currentProject) {
 					continue;
 				}
+				if (minimumCloneSizeCheck(location) == false) {
+					continue;
+				}
 				tuple[node,loc] current = <x, location>;
 				bool member = isMemberOfClones(current);
 				if (member) {
-					//cloneClasses = delete(cloneClasses, current[0]);
 					subCloneClasses += x;
 				}
 			}
@@ -233,15 +211,15 @@ public void checkForInnerClones(tuple[node,loc] tree) {
 	}
 }
 
-public bool isMemberOfClones(tuple[node,loc] current) {	
+public bool isMemberOfClones(tuple[node,loc] current) {
 
 	for (currentcloneClass <- cloneClasses) {
 		for (currentPair <- cloneClasses[currentcloneClass]) {
-			if ((current[1] < currentPair[0][1] && currentPair[0][1] > current[1]) || (current[1] < currentPair[1][1] && currentPair[1][1] > current[1])) {
+			if ((current[1] <= currentPair[0][1] && currentPair[0][0] == current[0]) || (current[1] <= currentPair[1][1] && currentPair[1][0] == current[0])) {
 				if (cloneClasses[current[0]]?) {
-					if (size(cloneClasses[current[0]]) == size(cloneClasses[currentcloneClass])) {
+					//if (size(cloneClasses[current[0]]) == size(cloneClasses[currentcloneClass])) {
 						return true;
-					}
+					//}
 				}
 			}	
 		}

@@ -141,15 +141,27 @@ public void viewFile(){
 						onMouseExit(void () {highlight = false;}),
 						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 									//edit(Vis::currentLocation);
+									//iprintln(clones);
+									return true;
+									})
+						)
+						]);
+		createTreeMap();
+	} else {
+		Vis::fileBoxList += vcat([
+						box(
+						text("<size(readFileLines(Vis::currentLocation))> lines in this file\n<size(clones)> clones"),
+						onMouseEnter(void () {highlight = true;}), 
+						onMouseExit(void () {highlight = false;}),
+						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+									//edit(Vis::currentLocation);
 									iprintln(clones);
 									return true;
 									})
 						)
 						]);
 		createTreeMap();
-	} //else {
-		
-	//}
+	}
 }
 
 public void createTreeMap(){

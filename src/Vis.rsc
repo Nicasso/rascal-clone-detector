@@ -31,9 +31,7 @@ public Color noCloneColor = color("White");
 public Color fullCloneColor = color("Red");
 public str defaultDirColor = "LightGrey";
 public str highlightDirColor = "DarkGrey";
-
-
-public loc currentLocation = Vis::startLocation;
+public loc currentLocation = Config::startLocation;
 
 public void mainVis(int cloneType) {
 	CloneDetector::main(cloneType);

@@ -20,10 +20,17 @@ import util::Math;
 import DateTime;
 import Traversal;
 import Helper;
+import UnitTests;
 
 //public loc currentProject = |project://TestProject|;
+//public loc currentProject2 = |file://C:/Users/Nico/workspace/TestProject/|;
+
+//public loc currentProject = |project://smallsql0.21_src|;
+//public loc currentProject2 = |file://C:/Users/Nico/workspace/smallsql0.21_src/|;
+
 public loc currentProject = |project://smallsql0.21_src|;
 public loc currentProject2 = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
+
 //public loc currentProject = |project://hsqldb-2.3.1|;
 
 map[node, lrel[node, loc]] buckets = ();
@@ -47,6 +54,8 @@ int cloneType;
 public void main(int cloneT) {
 	cloneType = cloneT;
 	
+	massThreshold = 25;
+	
 	iprintln("Attack of the clones!");
 	println(printTime(now(), "HH:mm:ss"));
 	
@@ -62,14 +71,12 @@ public void main(int cloneT) {
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
-
-	massThreshold = 25;
 	if (cloneType == 1) {
 	    similarityThreshold = 1.0;
   	} else if(cloneType == 2) {
 	    similarityThreshold = 1.0;
   	} else if(cloneType == 3) {
-		similarityThreshold = 0.75;
+		similarityThreshold = 0.50;
   	}
 	
 	// Step 1. Finding Sub-tree Clones
@@ -85,7 +92,7 @@ public void main(int cloneT) {
 					addSubTreeToMap(normalizedNode, normalizedNode);
 				} else if (cloneType == 3) {
 					node normalizedNode = normalizeNodeDec(x);
-					addSubTreeToMap(normalizedNode, normalizedNode);
+					addSubTreeToMap(normalizedNode, x);
 				}
 			}
 		}
@@ -131,6 +138,7 @@ public void main(int cloneT) {
 	println("Indexed all thesmaller subclones");
 	println(printTime(now(), "HH:mm:ss"));
 	
+	//@TODO CHECK IF THIS REALLY DELETES ANYTHING! 
 	// Remove the subclones one by one from the cloneClasses.
 	for (subCloneClas <- subCloneClasses) {
 		cloneClasses = delete(cloneClasses, subCloneClas);
@@ -152,7 +160,47 @@ public void main(int cloneT) {
 			cloneClasses = delete(cloneClasses, currentClass);
 		}
 	}
-		
+	
+	printCloneResults();
+	
+	
+}
+
+// @TODO CHECK IF THIS IS NOT TOO MUCH!
+// Normalize all variable types of the leaves in a tree.
+public node normalizeNodeDec(node ast) {
+	return visit (ast) {
+		case \method(x, _, y, z, q) => \method(lang::java::jdt::m3::AST::short(), "methodName", y, z, q)
+		case \method(x, _, y, z) => \method(lang::java::jdt::m3::AST::short(), "methodName", y, z)
+		case \parameter(x, _, z) => \parameter(x, "paramName", z)
+		case \vararg(x, _) => \vararg(x, "varArgName") 
+		case \annotationTypeMember(x, _) => \annotationTypeMember(x, "annonName")
+		case \annotationTypeMember(x, _, y) => \annotationTypeMember(x, "annonName", y)
+		case \typeParameter(_, x) => \typeParameter("typeParaName", x)
+		case \constructor(_, x, y, z) => \constructor("constructorName", x, y, z)
+		case \interface(_, x, y, z) => \interface("interfaceName", x, y, z)
+		case \class(_, x, y, z) => \class("className", x, y, z)
+		case \enumConstant(_, y) => \enumConstant("enumName", y) 
+		case \enumConstant(_, y, z) => \enumConstant("enumName", y, z)
+		case \methodCall(x, _, z) => \methodCall(x, "methodCall", z)
+		case \methodCall(x, y, _, z) => \methodCall(x, y, "methodCall", z) 
+		case Type _ => lang::java::jdt::m3::AST::short()
+		case Modifier _ => lang::java::jdt::m3::AST::\private()
+		case \simpleName(_) => \simpleName("simpleName")
+		case \number(_) => \number("1337")
+		case \variable(x,y) => \variable("variableName",y) 
+		case \variable(x,y,z) => \variable("variableName",y,z) 
+		case \booleanLiteral(_) => \booleanLiteral(true)
+		case \stringLiteral(_) => \stringLiteral("StringLiteralThingy")
+		case \characterLiteral(_) => \characterLiteral("q")
+	}
+}
+
+public void printCloneResults() {
+	println();
+	
+	int counting = 0;
+	
 	set[loc] clonePairsPerClass = {};
 	iprintln("Here come the clones!");
 	for (currentClass <- cloneClasses) {
@@ -164,158 +212,12 @@ public void main(int cloneT) {
 		}
 		for (uniqueClone <- clonePairsPerClass) {
 			iprintln(uniqueClone);
+			counting += 1;
 		}
 		iprintln("--------------------------------------------------");
 	}
 	
-	//printCloneResults();
-	
-	// Step 2. Finding Clone Sequences
-	// THIS IS WORK IN PROGRESS!!!
-	
-	findSequences(ast);
-	/*
-	iprintln("SEQUENCES!");
-	for (key <- cloneSequences) {
-		iprintln("Sequence Class");
-		for (seq <- cloneSequences[key]) {
-			iprintln("Single sequence");
-			for (lol <- seq) {
-				iprintln(lol[0][1]);
-				iprintln(lol[1][1]);
-				iprintln("-------------------------------------------------------------------------");
-			}
-		}
-	}
-	*/
-	
-	allFiles = getAllJavaFiles();
-	
-	fileInformation = transfer(cloneClasses, allFiles);
-	
-}
-
-// Normalize all variable types of the leaves in a tree.
-public node normalizeNodeDec(node ast) {
-	return visit (ast) {
-		case \Type(_) => \Type(char())
-		case \Modifier(_) => \Type(\private())
-		case \simpleName(_) => \simpleName("simpleName")
-		case \number(_) => \number("1337")
-		case \variable(x,y) => \variable("variableName",y) 
-		case \variable(x,y,z) => \variable("variableName",y,z) 
-		case \booleanLiteral(_) => \booleanLiteral(true)
-		case \stringLiteral(_) => \stringLiteral("StringLiteralThingy")
-		case \characterLiteral(_) => \characterLiteral("q")
-	}
-}
-
-// Work in progess
-public void findSequences(set[Declaration] ast) {
-	list[lrel[node,loc]] blocks = [];
-	
-	if (cloneType == 1) {
-		blocks = [[<n, n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
-	} else if (cloneType == 2 || cloneType == 3) {
-		blocks = [[<normalizeNodeDec(n), n@src> | n <- stmts] | /block(list[Statement] stmts) <- ast, size(stmts) >= 6];
-	}
-		
-	for (block <- blocks) {
-		// if the current block does not contain any clones then we remove it.
-		if (!containsClone(block)) {
-			blocks = blocks - [block];
-		}
-	}
-}
-
-public void addCloneSequence(list[node] key, lrel[tuple[node, loc], tuple[node, loc]] sequence) {
-	if (cloneSequences[key]?) {
-		if (!checkExistanceCloneSequence(sequence)) {
-			//iprintln("APPEND NEW SEQUENCE");
-			cloneSequences[key] += [sequence];
-		}
-	} else {
-		//iprintln("CREATE FIRST SEQUENCE");
-		cloneSequences[key] = [sequence];
-	}
-}
-
-public bool checkExistanceCloneSequence(lrel[tuple[node, loc], tuple[node, loc]] target) {
-	for (sequenceClass <- cloneSequences) {
-		for (sequence <- cloneSequences[sequenceClass]) {
-			if (target == sequence) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-public bool containsClone(list[tuple[node,loc]] block) {
-	lrel[tuple[node, loc], tuple[node, loc]] tmpSequence = [];
-	
-	list[node] currentKey = [];
-	
-	bool added = false;
-	bool containsClones = false;
-	
-	//iprintln("CONTAINSCLONES");		
-	
-	for (stmt <- block) {
-		added = false;
-		//iprintln(stmt[1]);
-		for (currentClass <- cloneClasses) {
-			for (currentClone <- cloneClasses[currentClass]) {
-				if (stmt[0] == currentClone[0][0] || stmt[0] == currentClone[1][0]) {
-					added = true;
-					tmpSequence += currentClone;
-					//iprintln("Found a clone!");
-					currentKey += stmt[0];
-					// REALLY? DOES THIS MAKE UNIQUE SEQUENCES?
-					cloneClasses[currentClass] = cloneClasses[currentClass] - currentClone;
-
-					if (size(cloneClasses[currentClass]) == 0) {
-						cloneClasses = delete(cloneClasses, currentClass);
-					}
-					break;
-				}
-			}
-			
-			if (added == true) {
-				break;
-			}
-		}
-		
-		if (added == false && size(tmpSequence) > 1) {
-			//iprintln("Saving the current tmpSequence");
-			addCloneSequence(currentKey, tmpSequence);
-			containsClones = true;
-			
-			tmpSequence = [];
-			currentKey = [];
-		} else if (added == false && size(tmpSequence) == 1) {
-			//iprintln("Resetting the current tmpSequence");
-			tmpSequence = [];
-			currentKey = [];
-		}
-	}
-	
-	if (size(tmpSequence) > 0) {
-		addCloneSequence(currentKey, tmpSequence);
-		containsClones = true;
-	}
-		
-	return containsClones;
-}
-
-public void printCloneResults() {
-	println();
-	iprintln("Final clone pairs");
-	for (pair <- clonePairs) {
-		iprintln(pair[0][1]);
-		iprintln(pair[1][1]);
-		iprintln("----------------------------------------------------------------------------------------");
-	}
+	iprintln("TOTAL <counting>");
 }
 
 public void checkForInnerClones(tuple[node,loc] tree) {
@@ -439,26 +341,27 @@ public loc getLocationOfNode(node subTree) {
 		if (s@src?) {
 			location = s@src;
 		}
-	} else if (Type t := subTree) {
-		iprintln("WTF THIS IS A TYPE!");
-	} else if (Modifier m := subTree) {
-		iprintln("WTF THIS IS A MODIFIER!");
-	} else {
-		iprintln("WTF IS THIS?!");
 	}
 	
 	return location;
 }
 
-public void addSubTreeToMap(node key, node subTree) {
+public bool minimumCloneSizeCheck(loc key) {
+	if (key.end.line - key.begin.line >= 6) {
+		return true;
+	}
+	return false;
+}
 
-	//if (cloneType == 3) {
-	//	key = checkForSimilarBucket(key);
-	//}
+public void addSubTreeToMap(node key, node subTree) {
 
 	loc location = getLocationOfNode(subTree);
 	
 	if (location == currentProject) {
+		return;
+	}
+	
+	if (minimumCloneSizeCheck(location) == false) {
 		return;
 	}
 	
@@ -467,37 +370,6 @@ public void addSubTreeToMap(node key, node subTree) {
 	} else {
 		buckets[key] = [<subTree,location>];
 	}
-}
-
-public node checkForSimilarBucket(node normalizedSubTreeKey) {
-	lrel[node, loc] highestSimilarityBucket;
-	real highestSimilarity = 0.00;
-	
-	for (bucket <- buckets) {
-		real similarity = calculateSimilarity(bucket, normalizedSubTreeKey)*1.0;
-		if (similarity >= similarityThreshold && similarity > highestSimilarity) {
-			highestSimilarity = similarity;
-			highestSimilarityBucket = bucket;
-		}
-	}
-		
-	if (highestSimilarity > 0) {
-		return highestSimilarityBucket;
-	} else {
-		return normalizedSubTreeKey;
-	}
-}
-
-public int findSubTrees(set[Declaration] ast, node dec) {
-	int occurrences = 0;
-	top-down visit (ast) {
-		case node x: {
-			if (x == dec) {
-				occurrences += 1;
-			}
-		}
-	}
-	return occurrences;
 }
 
 public int calculateMass(node currentNode) {

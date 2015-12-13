@@ -33,9 +33,9 @@ public str highlightDirColor = "DarkGrey";
 public loc startLocation = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
 public loc currentLocation = Vis::startLocation;
 
-public void main(){
+public void main(int cloneType) {
 	//buildFileInformation();
-	CloneDetector::main(2);
+	CloneDetector::main(cloneType);
 	startVisualization();
 }
 

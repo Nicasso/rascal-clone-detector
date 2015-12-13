@@ -163,6 +163,8 @@ public void main(int cloneT) {
 	
 	printCloneResults();
 	
+	allFiles = getAllJavaFiles();
+	fileInformation = transfer(cloneClasses, allFiles);
 	
 }
 

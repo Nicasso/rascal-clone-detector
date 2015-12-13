@@ -34,7 +34,6 @@ public loc startLocation = |file:///Users/robinkulhan/Documents/Eclipse%20Worksp
 public loc currentLocation = Vis::startLocation;
 
 public void main(int cloneType) {
-	//buildFileInformation();
 	CloneDetector::main(cloneType);
 	startVisualization();
 }
@@ -94,10 +93,10 @@ public void createFileAndDirBoxes(){
 			for(file <- CloneDetector::fileInformation){
 				if(file.location == location){
 					boxArea = file.LOC;
-					if((file.percentage) * 3 > 1.) percentage = 1.; else percentage = (file.percentage) * 2;
+					if((file.percentage) * 3 > 1.) percentage = 1.; else percentage = (file.percentage) * 3;
 					break;
 				}
-			}//Implement if for empty
+			}
 			Vis::fileBoxList += box(
 								area(boxArea),
 								fillColor(interpolateColor(Vis::noCloneColor, Vis::fullCloneColor, percentage)),

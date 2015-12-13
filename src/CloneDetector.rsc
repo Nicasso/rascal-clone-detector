@@ -22,6 +22,7 @@ import Traversal;
 import Helper;
 import UnitTests;
 import Config;
+import Vis;
 
 map[node, lrel[node, loc]] buckets = ();
 map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();

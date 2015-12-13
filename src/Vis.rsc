@@ -30,14 +30,12 @@ public Color noCloneColor = color("White");
 public Color fullCloneColor = color("Red");
 public str defaultDirColor = "LightGrey";
 public str highlightDirColor = "DarkGrey";
-public str defaultFileColor = "LightCyan";
-public str highlightFileColor = "PaleTurquoise";
 public loc startLocation = |file:///Users/robinkulhan/Documents/Eclipse%20Workspace/smallsql0.21_src|;
 public loc currentLocation = Vis::startLocation;
 
 public void main(){
 	//buildFileInformation();
-	CloneDetector::main();
+	CloneDetector::main(2);
 	startVisualization();
 }
 
@@ -96,10 +94,10 @@ public void createFileAndDirBoxes(){
 			for(file <- CloneDetector::fileInformation){
 				if(file.location == location){
 					boxArea = file.LOC;
-					percentage = (file.percentage) * 2;
+					if((file.percentage) * 3 > 1.) percentage = 1.; else percentage = (file.percentage) * 2;
 					break;
 				}
-			}
+			}//Implement if for empty
 			Vis::fileBoxList += box(
 								area(boxArea),
 								fillColor(interpolateColor(Vis::noCloneColor, Vis::fullCloneColor, percentage)),
@@ -123,28 +121,34 @@ public void createFileAndDirBoxes(){
 public void viewFile(){
 	clearMemory();
 	createGoUpDirBox();
-	Vis::textField = "Click on file to edit";
 	bool highlight = false;
-	int boxArea;
+	int LOC;
+	set[loc] clones;
 	for(file <- CloneDetector::fileInformation){
 		if(file.location == Vis::currentLocation){
-			boxArea = file.LOC;
+			LOC = file.LOC;
+			clones = file.clones;
 			break;
 		}
 	}
-	Vis::fileBoxList += vcat([
+	Vis::textField = "<LOC> LOC in file";
+	if (isEmpty(clones)){
+		Vis::fileBoxList += vcat([
 						box(
-						text("<boxArea> LOC in file"),
-						fillColor(Color () {return highlight ? color(Vis::highlightFileColor) : color(Vis::defaultFileColor);}),
+						text("No clones in this file."),
 						onMouseEnter(void () {highlight = true;}), 
 						onMouseExit(void () {highlight = false;}),
 						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-									edit(Vis::currentLocation);
+									//edit(Vis::currentLocation);
+									iprintln(clones);
 									return true;
 									})
 						)
 						]);
-	createTreeMap();
+		createTreeMap();
+	} //else {
+		
+	//}
 }
 
 public void createTreeMap(){

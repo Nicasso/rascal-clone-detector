@@ -20,7 +20,6 @@ import demo::common::Crawl;
 import DateTime;
 
 import CloneDetector;
-import Helper;
 import Config;
 
 public list[loc] filesInLocation = [];
@@ -93,7 +92,7 @@ public void createFileAndDirBoxes(){
 			for(file <- CloneDetector::fileInformation){
 				if(file.location == location){
 					boxArea = file.LOC;
-					if((file.percentage) * 3 > 1.) percentage = 1.; else percentage = (file.percentage) * 3;
+					percentage = file.percentage * 3 > 1. ? 1. : file.percentage * 3;
 					break;
 				}
 			}
@@ -130,7 +129,8 @@ public void viewFile(){
 			break;
 		}
 	}
-	Vis::textField = "<LOC> LOC in file";
+	int numberOfClones = size(clones);
+	Vis::textField = (numberOfClones == 1) ? "1 clone in this file" : "<numberOfClones> clones in this file";
 	if (isEmpty(clones)){
 		Vis::fileBoxList += vcat([
 						box(
@@ -138,28 +138,58 @@ public void viewFile(){
 						onMouseEnter(void () {highlight = true;}), 
 						onMouseExit(void () {highlight = false;}),
 						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-									//edit(Vis::currentLocation);
-									//iprintln(clones);
 									return true;
 									})
 						)
 						]);
 		createTreeMap();
 	} else {
-		Vis::fileBoxList += vcat([
-						box(
-						text("<size(readFileLines(Vis::currentLocation))> lines in this file\n<size(clones)> clones"),
-						onMouseEnter(void () {highlight = true;}), 
-						onMouseExit(void () {highlight = false;}),
-						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-									//edit(Vis::currentLocation);
-									iprintln(clones);
-									return true;
-									})
-						)
-						]);
-		createTreeMap();
+		//iprintln(clones);
+		int currentLine = 1;
+		int endLine = size(readFileLines(Vis::currentLocation));
+		list[loc] sortedClones = sortClones(clones);
+		for(clone <- sortedClones){
+			Vis::fileBoxList += box(
+									text("<currentLine> - <clone.begin.line - 1>"),
+									vshrink(toReal((clone.begin.line) - (currentLine)) / toReal(endLine))
+									);
+									//iprintln("<currentLine> - <clone.begin.line - 1>");
+									//iprintln(clone.begin.line - currentLine);
+									//println();
+			Vis::fileBoxList += box(
+									text("<clone.begin.line> - <clone.end.line>"),
+									vshrink(toReal((clone.end.line) - (clone.begin.line) + 1) / toReal(endLine))
+									);
+									//iprintln("CLONE <clone.begin.line> - <clone.end.line>");
+									//iprintln(clone.end.line - clone.begin.line + 1);
+									//println();
+			currentLine = clone.end.line + 1;
+		}
+		Vis::fileBoxList += box(
+								text("<currentLine> - <endLine>"),
+								vshrink(toReal((endLine) - (currentLine) + 1) / toReal(endLine))
+								);
+								//iprintln("<currentLine> - <endLine>");
+		createFileView();
 	}
+}
+
+public list[loc] sortClones(set[loc] clones){
+	list[loc] unsorted = toList(clones);
+	list[loc] sorted = [];
+	sorted = insertAt(sorted, 0, head(unsorted));
+	unsorted = delete(unsorted, 0);
+	for(loc clone1 <- unsorted){
+		int i = 0;
+		for(loc clone2 <- sorted){
+			if(clone1.begin.line > clone2.begin.line){
+				i += 1;
+			}
+		}
+		sorted = insertAt(sorted, i, head(unsorted));
+		unsorted = delete(unsorted, 0);
+	}
+	return sorted;
 }
 
 public void createTreeMap(){
@@ -173,6 +203,26 @@ public void createTreeMap(){
 				vshrink(0.04)),
 			box(
 				treemap(Vis::fileBoxList), 
+				vshrink(0.88)),
+			box(
+				text(str(){return "<Vis::textField>";}), 
+				fillColor(Vis::defaultDirColor),
+				vshrink(0.04))
+		]);
+	render(t);
+}
+
+public void createFileView(){
+	t = vcat([
+			box(
+				text(toString(Vis::currentLocation)),
+				fillColor(Vis::defaultDirColor), 
+				vshrink(0.04)),
+			box(
+				treemap(Vis::dirBoxList), 
+				vshrink(0.04)),
+			box(
+				vcat(Vis::fileBoxList), 
 				vshrink(0.88)),
 			box(
 				text(str(){return "<Vis::textField>";}), 

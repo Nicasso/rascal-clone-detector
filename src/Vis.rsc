@@ -134,7 +134,7 @@ public void viewFile(){
 	if (isEmpty(clones)){
 		Vis::fileBoxList += vcat([
 						box(
-						text("No clones in this file."),
+						text("0 clones in this file"),
 						onMouseEnter(void () {highlight = true;}), 
 						onMouseExit(void () {highlight = false;}),
 						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
@@ -144,32 +144,41 @@ public void viewFile(){
 						]);
 		createTreeMap();
 	} else {
-		//iprintln(clones);
+		iprintln(clones);
 		int currentLine = 1;
+		real shrink = 1.0;
 		int endLine = size(readFileLines(Vis::currentLocation));
 		list[loc] sortedClones = sortClones(clones);
 		for(clone <- sortedClones){
 			Vis::fileBoxList += box(
-									text("<currentLine> - <clone.begin.line - 1>"),
+									//text("line: <currentLine> - <clone.begin.line - 1>"),
 									vshrink(toReal((clone.begin.line) - (currentLine)) / toReal(endLine))
 									);
-									//iprintln("<currentLine> - <clone.begin.line - 1>");
-									//iprintln(clone.begin.line - currentLine);
-									//println();
+									shrink -= (toReal((clone.begin.line) - (currentLine)) / toReal(endLine));
+									iprintln("<currentLine> - <clone.begin.line - 1>");
+									iprintln(clone.begin.line - currentLine);
+									iprintln(toReal((clone.begin.line) - (currentLine)) / toReal(endLine));
+									println();
 			Vis::fileBoxList += box(
-									text("<clone.begin.line> - <clone.end.line>"),
+									//text("line: <clone.begin.line> - <clone.end.line>"),
+									fillColor("Red"),
 									vshrink(toReal((clone.end.line) - (clone.begin.line) + 1) / toReal(endLine))
 									);
-									//iprintln("CLONE <clone.begin.line> - <clone.end.line>");
-									//iprintln(clone.end.line - clone.begin.line + 1);
-									//println();
+									shrink -= (toReal((clone.end.line) - (clone.begin.line) + 1) / toReal(endLine));
+									iprintln("CLONE <clone.begin.line> - <clone.end.line>");
+									iprintln(clone.end.line - clone.begin.line + 1);
+									iprintln(toReal((clone.end.line) - (clone.begin.line) + 1) / toReal(endLine));
+									println();
 			currentLine = clone.end.line + 1;
 		}
 		Vis::fileBoxList += box(
-								text("<currentLine> - <endLine>"),
-								vshrink(toReal((endLine) - (currentLine) + 1) / toReal(endLine))
+								//text("line: <currentLine> - <endLine>"),
+								vshrink(shrink - 0.00001)
 								);
-								//iprintln("<currentLine> - <endLine>");
+								iprintln("<currentLine> - <endLine>");
+								iprintln(endLine - currentLine + 1);
+								iprintln(shrink);
+								println();
 		createFileView();
 	}
 }

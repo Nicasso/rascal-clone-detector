@@ -34,8 +34,8 @@ public loc currentLocation = Config::startLocation;
 public lrel[loc location,int LOC, real percentage, set[loc] clones] fileInformation = [];
 
 public void mainVis(int cloneType) {
-	//CloneDetector::main(cloneType);
-	createFileInformation();
+	CloneDetector::main(cloneType);
+	//createFileInformation();
 	startVisualization();
 }
 
@@ -92,7 +92,7 @@ public void createFileAndDirBoxes(){
 			bool highlight = false;
 			int boxArea;
 			real percentage;
-			for(file <- Vis::fileInformation){
+			for(file <- CloneDetector::fileInformation){
 				if(file.location == location){
 					boxArea = file.LOC;
 					percentage = file.percentage * 3 > 1. ? 1. : file.percentage * 3;
@@ -125,7 +125,7 @@ public void viewFile(){
 	bool highlight = false;
 	int LOC;
 	set[loc] clones;
-	for(file <- Vis::fileInformation){
+	for(file <- CloneDetector::fileInformation){
 		if(file.location == Vis::currentLocation){
 			LOC = file.LOC;
 			clones = file.clones;
@@ -149,9 +149,9 @@ public void viewFile(){
 	} else {
 		int endLine = size(readFileLines(Vis::currentLocation));
 		list[loc] sortedClones = sortClones(clones);
-		real shrink = 1.0;
 		bool highlight = false;
 		for(clone <- sortedClones){
+			loc cloneLocation = clone;
 			str text = "Click to open clone in line <clone.begin.line> - <clone.end.line>";
 			Vis::fileBoxList += box(
 									vcat([
@@ -168,7 +168,7 @@ public void viewFile(){
 									onMouseEnter(void () {highlight = true; Vis::textField = text;}), 
 									onMouseExit(void () {highlight = false; Vis::textField = "";}),
 									onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-										edit(clone);
+										iprint(CloneDetector::getCloneClass(cloneLocation));
 										return true;
 									})
 								);

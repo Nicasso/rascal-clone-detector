@@ -48,6 +48,8 @@ public void main(int cloneT) {
 	buckets = ();
 	cloneClasses = ();
 	subCloneClasses = [];
+	fileInformation = [];
+	allFiles = [];
 	
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	

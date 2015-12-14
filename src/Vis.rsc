@@ -155,30 +155,30 @@ public void viewFile(){
 									vshrink(toReal((clone.begin.line) - (currentLine)) / toReal(endLine))
 									);
 									shrink -= (toReal((clone.begin.line) - (currentLine)) / toReal(endLine));
-									iprintln("<currentLine> - <clone.begin.line - 1>");
-									iprintln(clone.begin.line - currentLine);
-									iprintln(toReal((clone.begin.line) - (currentLine)) / toReal(endLine));
-									println();
+									//iprintln("<currentLine> - <clone.begin.line - 1>");
+									//iprintln(clone.begin.line - currentLine);
+									//iprintln(toReal((clone.begin.line) - (currentLine)) / toReal(endLine));
+									//println();
 			Vis::fileBoxList += box(
 									//text("line: <clone.begin.line> - <clone.end.line>"),
 									fillColor("Red"),
 									vshrink(toReal((clone.end.line) - (clone.begin.line) + 1) / toReal(endLine))
 									);
 									shrink -= (toReal((clone.end.line) - (clone.begin.line) + 1) / toReal(endLine));
-									iprintln("CLONE <clone.begin.line> - <clone.end.line>");
-									iprintln(clone.end.line - clone.begin.line + 1);
-									iprintln(toReal((clone.end.line) - (clone.begin.line) + 1) / toReal(endLine));
-									println();
+									//iprintln("CLONE <clone.begin.line> - <clone.end.line>");
+									//iprintln(clone.end.line - clone.begin.line + 1);
+									//iprintln(toReal((clone.end.line) - (clone.begin.line) + 1) / toReal(endLine));
+									//println();
 			currentLine = clone.end.line + 1;
 		}
 		Vis::fileBoxList += box(
 								//text("line: <currentLine> - <endLine>"),
 								vshrink(shrink - 0.00001)
 								);
-								iprintln("<currentLine> - <endLine>");
-								iprintln(endLine - currentLine + 1);
-								iprintln(shrink);
-								println();
+								//iprintln("<currentLine> - <endLine>");
+								//iprintln(endLine - currentLine + 1);
+								//iprintln(shrink);
+								//println();
 		createFileView();
 	}
 }

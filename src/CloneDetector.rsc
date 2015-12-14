@@ -29,6 +29,7 @@ map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();
 list[node] subCloneClasses = [];
 
 list[loc] allFiles = [];
+set[set[loc]] allClonePairs = {};
 public lrel[loc location,int LOC, real percentage, set[loc] clones] fileInformation = [];
 
 set[Declaration] ast;
@@ -135,6 +136,16 @@ public void main(int cloneT) {
 	allFiles = getAllJavaFiles();
 
 	fileInformation = transfer(cloneClasses, allFiles);
+	
+	set[set[loc]] allClonePairs = {
+		{
+			*{clonePair[0][1], clonePair[1][1]}
+		|
+			clonePair <- cloneClasses[cloneClass]
+		}
+	|
+		cloneClass <- cloneClasses
+	};
 }
 
 // @TODO CHECK IF THIS IS NOT TOO MUCH!
@@ -353,6 +364,14 @@ public int calculateMass(node currentNode) {
 		}
 	}
 	return mass;
+}
+
+public set[loc] getCloneClass(loc clone){
+	for(set[loc] A <- allClonePairs){
+		if(clone in A)
+			return A;
+	}
+	return {};
 }
 
 public lrel[loc,int, real,set[loc]] transfer(map[node, lrel[tuple[node,loc],tuple[node,loc]]] cloneClasses, list[loc] allFiles){

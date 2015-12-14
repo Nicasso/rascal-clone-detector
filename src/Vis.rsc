@@ -59,8 +59,8 @@ public void createGoUpDirBox(){
 		Vis::dirBoxList += box(
 						text("..."),
 						fillColor(Color () { return highlight ? color(Vis::highlightDirColor) : color(Vis::defaultDirColor); }),
-						onMouseEnter(void () { highlight = true;}), 
-						onMouseExit(void () { highlight = false;}),
+						onMouseEnter(void () { highlight = true; Vis::textField = "Click to open parent folder";}), 
+						onMouseExit(void () { highlight = false; Vis::textField = "";}),
 						onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 							Vis::currentLocation = Vis::currentLocation.parent;
 							startVisualization();
@@ -76,11 +76,12 @@ public void createFileAndDirBoxes(){
 		loc tmploc = location;
 		if(contains(location.extension, "/") || location.extension == ""){
 			bool highlight = false;
+			str showText = replaceFirst(location.path, Vis::currentLocation.path, "");
 			Vis::dirBoxList += box(
-								text(replaceFirst(location.path, Vis::currentLocation.path, "")),
+								text(showText),
 								fillColor(Color () {return highlight ? color(Vis::highlightDirColor) : color(Vis::defaultDirColor);}),
-								onMouseEnter(void () {highlight = true;}), 
-								onMouseExit(void () {highlight = false;}),
+								onMouseEnter(void () {highlight = true; Vis::textField = "Click to open " + showText;}), 
+								onMouseExit(void () {highlight = false; Vis::textField = "";}),
 								onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 									Vis::currentLocation = tmploc;
 									startVisualization();
@@ -101,7 +102,7 @@ public void createFileAndDirBoxes(){
 			Vis::fileBoxList += box(
 								area(boxArea),
 								fillColor(interpolateColor(Vis::noCloneColor, Vis::fullCloneColor, percentage)),
-								onMouseEnter(void () {highlight = true; Vis::textField = tmploc.file + " (<boxArea> LOC)";}), 
+								onMouseEnter(void () {highlight = true; Vis::textField = "Click to open " + tmploc.file + " (<boxArea> LOC)";}), 
 								onMouseExit(void () {highlight = false; Vis::textField = "";}),
 								onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 									Vis::currentLocation = tmploc;
@@ -151,37 +152,25 @@ public void viewFile(){
 		real shrink = 1.0;
 		bool highlight = false;
 		for(clone <- sortedClones){
-			str text = "Clone in line <clone.begin.line> - <clone.end.line>";
+			str text = "Click to open clone in line <clone.begin.line> - <clone.end.line>";
 			Vis::fileBoxList += box(
 									vcat([
 										box(
-											vshrink(toReal(clone.begin.line - 1) / toReal(endLine)),
-											onMouseEnter(void () {highlight = true; Vis::textField = text;}), 
-											onMouseExit(void () {highlight = false; Vis::textField = "";}),
-											onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-												edit(clone);
-												return true;
-											})
+											vshrink(toReal(clone.begin.line - 1) / toReal(endLine))
 										),
 										box(
-											fillColor("Red"),
-											onMouseEnter(void () {highlight = true; Vis::textField = text;}), 
-											onMouseExit(void () {highlight = false; Vis::textField = "";}),
-											onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-												edit(clone);
-												return true;
-											})
+											fillColor("Red")
 										),
 										box(
-											vshrink(toReal(endLine - clone.end.line) / toReal(endLine)),
-											onMouseEnter(void () {highlight = true; Vis::textField = text;}), 
-											onMouseExit(void () {highlight = false; Vis::textField = "";}),
-											onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-												edit(clone);
-												return true;
-											})
+											vshrink(toReal(endLine - clone.end.line) / toReal(endLine))
 										)
-									])
+									]),
+									onMouseEnter(void () {highlight = true; Vis::textField = text;}), 
+									onMouseExit(void () {highlight = false; Vis::textField = "";}),
+									onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
+										edit(clone);
+										return true;
+									})
 								);
 		}
 		createFileView();

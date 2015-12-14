@@ -61,15 +61,15 @@ public void main(int cloneT) {
   	} else if(cloneType == 2) {
 	    similarityThreshold = 1.0;
   	} else if(cloneType == 3) {
-		similarityThreshold = 0.50;
+		similarityThreshold = 0.80;
   	}
 	
-	// Step 1. Finding Sub-tree Clones
-	
-	// Add all the subtrees with a decent mass to a bucket.
+	// Add all the subtrees with a mass higher than the massThreshold into a bucket.
+	// Depening on the clone type we want to find, we normalize the subtrees.
 	visit (ast) {
 		case node x: {
-			if (calculateMass(x) >= massThreshold) {
+			int currentMass = calculateMass(x);
+			if (currentMass >= massThreshold) {
 				if (cloneType == 1) {
 					addSubTreeToMap(x, x);
 				} else if (cloneType == 2) {

@@ -131,7 +131,7 @@ public void main(int cloneT) {
 	println("Removed all subclones from the cloneClasses");
 	println(printTime(now(), "HH:mm:ss"));
 	
-	//printCloneResults();
+	printCloneResults();
 	
 	allFiles = getAllJavaFiles();
 
@@ -366,10 +366,11 @@ public int calculateMass(node currentNode) {
 	return mass;
 }
 
-public set[loc] getCloneClass(loc clone){
-	for(set[loc] A <- allClonePairs){
-		if(clone in A)
+public set[loc] getCloneClass(loc clone,set[set[loc]] temp){
+	for(set[loc] A <- temp){
+		if(clone in A){
 			return A;
+		}
 	}
 	return {};
 }

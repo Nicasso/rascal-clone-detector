@@ -56,12 +56,12 @@ public void main(int cloneT) {
 	ast = createAstsFromEclipseProject(currentProject, true);
 		
 	if (cloneType == 1) {
-	    similarityThreshold = 1.0;
-  	} else if(cloneType == 2) {
-	    similarityThreshold = 1.0;
-  	} else if(cloneType == 3) {
+		similarityThreshold = 1.0;
+	} else if(cloneType == 2) {
+		similarityThreshold = 1.0;
+	} else if(cloneType == 3) {
 		similarityThreshold = 0.80;
-  	}
+	}
 	
 	// Add all the subtrees with a mass higher than the massThreshold into a bucket.
 	// Depening on the clone type we want to find, we normalize the subtrees.
@@ -76,7 +76,7 @@ public void main(int cloneT) {
 					addSubTreeToMap(normalizedNode, normalizedNode);
 				} else if (cloneType == 3) {
 					node normalizedNode = normalizeNodeDec(x);
-					addSubTreeToMap(normalizedNode, x);
+					addSubTreeToMap(normalizedNode, normalizedNode);
 				}
 			}
 		}
@@ -95,13 +95,21 @@ public void main(int cloneT) {
 			complementBucket = removeSymmetricPairs(complementBucket);
 				
 			for (treeRelation <- complementBucket) {
-				num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0])*1.0;
-				//println("Similarity: <similarity> \>= <similarityThreshold>");
-				if (similarity >= similarityThreshold) {
+				if (cloneType == 3) {
 					if (cloneClasses[treeRelation[0][0]]?) {
 						cloneClasses[treeRelation[0][0]] += treeRelation;
 					} else {
 						cloneClasses[treeRelation[0][0]] = [treeRelation];
+					}
+				} else {
+					num similarity = calculateSimilarity(treeRelation[0][0], treeRelation[1][0])*1.0;
+					//println("Similarity: <similarity> \>= <similarityThreshold>");
+					if (similarity >= similarityThreshold) {
+						if (cloneClasses[treeRelation[0][0]]?) {
+							cloneClasses[treeRelation[0][0]] += treeRelation;
+						} else {
+							cloneClasses[treeRelation[0][0]] = [treeRelation];
+						}
 					}
 				}
 			}
@@ -225,7 +233,7 @@ public bool isMemberOfClones(tuple[node,loc] current) {
 						return true;
 					//}
 				}
-			}	
+			} 
 		}
 	}
 	
@@ -242,36 +250,6 @@ public lrel[tuple[node,loc],tuple[node,loc]] removeSymmetricPairs(lrel[tuple[nod
 		}
 	}
 	return newClonePairs;
-}
-
-public list[node] getParentsOfClone(node current) {
-	
-	list[node] parents = [];
-	
-	//iprintln("Potential parents");
-	top-down visit (ast) {
-		case current: {
-			list[value] context = getTraversalContext();
-			
-			int i = 1;
-			bool added = false;
-			while (i <= size(context) && added == false) {
-				value potentialParent = context[i];
-				
-				if (node x := potentialParent) {
-					//iprintln("FOUND PARENT");
-					//iprintln(getLocationOfNode(potentialParent));
-					parents += x;
-					added = true;
-				} 
-				i += 1;
-			}
-			//iprintln("NEXT");
-			//iprintln("--------------------------------------------------------------------------------------");
-		}
-	}
-	
-	return parents;
 }
 
 public num calculateSimilarity(node t1, node t2) {
@@ -340,8 +318,52 @@ public void addSubTreeToMap(node key, node subTree) {
 		return;
 	}
 	
+	if (cloneType == 3) {
+		int totalB = size(buckets);
+		int i = 0;
+		
+		node bestKeyMatch;
+		num highestSimilarity = 0;
+		for (buck <- buckets) {
+			//iprintln("<i>/<totalB>");
+			i += 1;
+			num currentSimilarity = calculateSimilarity(buck, key);
+			if (currentSimilarity >= similarityThreshold && currentSimilarity > highestSimilarity) {
+				highestSimilarity = currentSimilarity;
+				bestKeyMatch = buck; 
+			}
+		}
+		
+		if (highestSimilarity > 0) {
+			key = bestKeyMatch;
+		}
+	}
+	
 	if (buckets[key]?) {
-		buckets[key] += <subTree,location>;
+	
+		bool doIt = true;
+		for (clonePair <- buckets[key]) {
+			//iprintln(location);
+			//iprintln(clonePair[1]);
+			//iprintln(location < clonePair[1]);
+			//iprintln("-----");
+			if (location < clonePair[1]) {
+				//iprintln("WOOT");
+				doIt = false;
+				break;
+			} else if (clonePair[1] < location) {
+				//iprintln("DHUSAUDIOASJDIOASOJDPASK");
+				buckets[key] = buckets[key] - clonePair; 
+			}
+		}
+	
+		if (doIt == true) {
+			//iprintln("DOIT!");
+			buckets[key] += <subTree,location>;
+		} else {
+			//iprintln("HELL NAAHH!!");
+			int a;
+		}
 	} else {
 		buckets[key] = [<subTree,location>];
 	}
@@ -416,7 +438,7 @@ public lrel[loc,int, real,set[loc]] transfer(map[node, lrel[tuple[node,loc],tupl
 	//			 // location of it's parent,
 	//			 // number of lines for the parent>
 	//			loc parent = toLocation(location.uri); 
-	//			temp += <location, computeLOC(location), parent, computeLOC(parent)>;   
+	//			temp += <location, computeLOC(location), parent, computeLOC(parent)>;	 
 	//		}
 	//	result += [temp];
 	//}

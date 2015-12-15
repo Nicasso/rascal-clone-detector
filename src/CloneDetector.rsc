@@ -24,18 +24,18 @@ import UnitTests;
 import Config;
 import Vis;
 
-map[node, lrel[node, loc]] buckets = ();
-map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();
-list[node] subCloneClasses = [];
+public map[node, lrel[node, loc]] buckets = ();
+public map[node, lrel[tuple[node, loc], tuple[node, loc]]] cloneClasses = ();
+public list[node] subCloneClasses = [];
 
-list[loc] allFiles = [];
+public list[loc] allFiles = [];
 public lrel[loc location,int LOC, real percentage, set[loc] clones] fileInformation = [];
 
-set[Declaration] ast;
+public set[Declaration] ast;
 
-int massThreshold;
-real similarityThreshold;
-int cloneType;
+public int massThreshold;
+public real similarityThreshold;
+public int cloneType;
 
 public void main(int cloneT) {
 	cloneType = cloneT;
@@ -54,7 +54,7 @@ public void main(int cloneT) {
 	currentSoftware = createM3FromEclipseProject(currentProject);
 	
 	ast = createAstsFromEclipseProject(currentProject, true);
-		
+
 	if (cloneType == 1) {
 		similarityThreshold = 1.0;
 	} else if(cloneType == 2) {
@@ -340,29 +340,29 @@ public void addSubTreeToMap(node key, node subTree) {
 	}
 	
 	if (buckets[key]?) {
-	
-		bool doIt = true;
-		for (clonePair <- buckets[key]) {
-			//iprintln(location);
-			//iprintln(clonePair[1]);
-			//iprintln(location < clonePair[1]);
-			//iprintln("-----");
-			if (location < clonePair[1]) {
-				//iprintln("WOOT");
-				doIt = false;
-				break;
-			} else if (clonePair[1] < location) {
-				//iprintln("DHUSAUDIOASJDIOASOJDPASK");
-				buckets[key] = buckets[key] - clonePair; 
+		if(cloneType == 3) {
+			bool doIt = true;
+			for (clonePair <- buckets[key]) {
+				//iprintln(location);
+				//iprintln(clonePair[1]);
+				//iprintln(location < clonePair[1]);
+				//iprintln("-----");
+				if (location < clonePair[1]) {
+					//iprintln("WOOT");
+					doIt = false;
+					break;
+				} else if (clonePair[1] < location) {
+					//iprintln("DHUSAUDIOASJDIOASOJDPASK");
+					buckets[key] = buckets[key] - clonePair; 
+				}
 			}
-		}
-	
-		if (doIt == true) {
-			//iprintln("DOIT!");
-			buckets[key] += <subTree,location>;
+		
+			if (doIt == true) {
+				//iprintln("DOIT!");
+				buckets[key] += <subTree,location>;
+			}
 		} else {
-			//iprintln("HELL NAAHH!!");
-			int a;
+			buckets[key] += <subTree,location>;
 		}
 	} else {
 		buckets[key] = [<subTree,location>];

@@ -217,10 +217,11 @@ public void checkForInnerClones(tuple[node,loc] tree) {
 					if (location == currentProject) {
 						//iprintln("SAME LOCATION");
 						doIt = false;
-					}
-					if (minimumCloneSizeCheck(location) == false) {
-						//iprintln("MINIMUM SIZE CHECK");
-						doIt = false;
+					} else {
+						if (minimumCloneSizeCheck(location) == false) {
+							//iprintln("MINIMUM SIZE CHECK");
+							doIt = false;
+						}
 					}
 					if(doIt) {
 						tuple[node,loc] current = <x, location>;

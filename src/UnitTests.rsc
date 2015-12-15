@@ -126,7 +126,7 @@ public test bool testType2() {
 	
 	set[loc] expectedPairs = {
 	|file:///C:/Users/Nico/workspace/TestProject2/src/Test.java|(98,127,<9,21>,<19,2>),
-	|file:///C:/Users/Nico/workspace/TestProject2:/src/Test.java|(251,127,<21,21>,<31,2>)
+	|file:///C:/Users/Nico/workspace/TestProject2/src/Test.java|(251,127,<21,21>,<31,2>)
 	};
 	
 	main(2);
@@ -154,13 +154,13 @@ public test bool testType2() {
 	return false;
 }
 
-public test bool testType2() {
-	currentProject = |project://TestProject2|;
-	currentProject2 = |file://C:/Users/Nico/workspace/TestProject2/|;
+public test bool testType3() {
+	currentProject = |project://TestProject3|;
+	currentProject2 = |file://C:/Users/Nico/workspace/TestProject3/|;
 	
 	set[loc] expectedPairs = {
-	|file:///C:/Users/Nico/workspace/TestProject2/src/Test.java|(98,127,<9,21>,<19,2>),
-	|file:///C:/Users/Nico/workspace/TestProject2:/src/Test.java|(251,127,<21,21>,<31,2>)
+	|file:///C:/Users/Nico/workspace/TestProject3/src/Test.java|(273,127,<22,21>,<32,2>),
+	|file:///C:/Users/Nico/workspace/TestProject3/src/Test.java|(98,149,<9,21>,<20,2>)
 	};
 	
 	main(3);

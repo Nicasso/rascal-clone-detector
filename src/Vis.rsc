@@ -26,6 +26,7 @@ public list[loc] filesInLocation = [];
 public list[Figure] dirBoxList = [];
 public list[Figure] fileBoxList = [];
 public str textField = "";
+public int cloneType;
 public Color noCloneColor = color("White");
 public Color fullCloneColor = color("Red");
 public str defaultDirColor = "LightGrey";
@@ -34,6 +35,7 @@ public loc currentLocation = Config::startLocation;
 
 public void mainVis(int cloneType) {
 	CloneDetector::main(cloneType);
+	Vis::cloneType = cloneType;
 	startVisualization();
 }
 
@@ -163,7 +165,7 @@ public void createSingleFileBox(){
 		for(clone <- sortedClones){
 			bool highlight = false;
 			loc cloneLocation = clone;
-			str text = "Click to see where this clone (line <clone.begin.line> - <clone.end.line>) occurs";
+			str text = "Click to see where this Type <Vis::cloneType> clone (line <clone.begin.line> - <clone.end.line>) occurs";
 			Vis::fileBoxList += box(
 									vcat([
 										box(

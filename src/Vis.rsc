@@ -163,7 +163,7 @@ public void createSingleFileBox(){
 		for(clone <- sortedClones){
 			bool highlight = false;
 			loc cloneLocation = clone;
-			str text = "Click to open clone in line <clone.begin.line> - <clone.end.line>";
+			str text = "Click to see where this clone (line <clone.begin.line> - <clone.end.line>) occurs";
 			Vis::fileBoxList += box(
 									vcat([
 										box(

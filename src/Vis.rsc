@@ -41,7 +41,7 @@ public void startVisualization() {
 	clearMemory();
 	createGoUpDirBox();
 	createFileAndDirBoxes();
-	createTreeMap();
+	createFileAndDirView();
 }
 
 public void clearMemory(){
@@ -68,7 +68,7 @@ public void createGoUpDirBox(){
 	}
 }
 
-public void createGoBackDirBox(){
+public void createGoBackToFileBox(){
 	bool highlight = false;
 	Vis::dirBoxList += box(
 					text("..."),
@@ -76,7 +76,7 @@ public void createGoBackDirBox(){
 					onMouseEnter(void () { highlight = true; Vis::textField = "Click to go back to file";}), 
 					onMouseExit(void () { highlight = false; Vis::textField = "";}),
 					onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-						viewFile();
+						createSingleFileBox();
 						return true;
 						})
 					);
@@ -118,7 +118,7 @@ public void createFileAndDirBoxes(){
 								onMouseExit(void () {highlight = false; Vis::textField = "";}),
 								onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
 									Vis::currentLocation = tmploc;
-									viewFile();
+									createSingleFileBox();
 									return true;
 									})
 								);
@@ -131,7 +131,7 @@ public void createFileAndDirBoxes(){
 	}
 }
 
-public void viewFile(){
+public void createSingleFileBox(){
 	clearMemory();
 	createGoUpDirBox();
 	bool highlight = false;
@@ -156,7 +156,7 @@ public void viewFile(){
 									})
 						)
 						]);
-		createTreeMap();
+		createFileAndDirView();
 	} else {
 		int endLine = size(readFileLines(Vis::currentLocation));
 		list[loc] sortedClones = sortClones(clones);
@@ -181,18 +181,18 @@ public void viewFile(){
 									onMouseEnter(void () {highlight = true; Vis::textField = text;}), 
 									onMouseExit(void () {highlight = false; Vis::textField = "";}),
 									onMouseDown(bool (int butnr, map[KeyModifier,bool] modifiers){
-										viewClones(CloneDetector::getCloneClass(cloneLocation));
+										createCloneBox(CloneDetector::getCloneClass(cloneLocation));
 										return true;
 									})
 								);
 		}
-		createFileView();
+		createSingleFileView();
 	}
 }
 
-public void viewClones(set[loc] cloneLocations){
+public void createCloneBox(set[loc] cloneLocations){
 	clearMemory();
-	createGoBackDirBox();
+	createGoBackToFileBox();
 	for(clone <- cloneLocations){
 		bool highlight = false;
 		loc cloneLocation = clone;
@@ -228,7 +228,7 @@ public list[loc] sortClones(set[loc] clones){
 	return sorted;
 }
 
-public void createTreeMap(){
+public void createFileAndDirView(){
 	t = vcat([
 			box(
 				text(toString(Vis::currentLocation)),
@@ -248,7 +248,7 @@ public void createTreeMap(){
 	render(t);
 }
 
-public void createFileView(){
+public void createSingleFileView(){
 	t = vcat([
 			box(
 				text(toString(Vis::currentLocation)),

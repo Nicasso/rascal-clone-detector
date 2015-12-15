@@ -202,22 +202,41 @@ public void printCloneResults() {
 }
 
 public void checkForInnerClones(tuple[node,loc] tree) {
+	//iprintln("checkForInnerClones");
+	//iprintln(tree[1]);
 	visit (tree[0]) {
 		case node x: {
+			//iprintln("CHECK THIS NODE");
 			// Only if the tree is not equal to itself, and has a certain mass.
-			if (x != tree[0] && calculateMass(x) >= massThreshold) {
-				loc location = getLocationOfNode(x);
-				if (location == currentProject) {
-					continue;
+			if(x != tree[0]) {
+				if (calculateMass(x) >= massThreshold) {
+					//iprintln("WOOT");
+					loc location = getLocationOfNode(x);
+					//iprintln(location);
+					bool doIt = true;
+					if (location == currentProject) {
+						//iprintln("SAME LOCATION");
+						doIt = false;
+					}
+					if (minimumCloneSizeCheck(location) == false) {
+						//iprintln("MINIMUM SIZE CHECK");
+						doIt = false;
+					}
+					if(doIt) {
+						tuple[node,loc] current = <x, location>;
+						//iprintln(location);
+						bool member = isMemberOfClones(current);
+						if (member) {
+							subCloneClasses += x;
+						}
+					}
+				} else {
+					//iprintln("NOT ENOUGH MASS");
+					int a;
 				}
-				if (minimumCloneSizeCheck(location) == false) {
-					continue;
-				}
-				tuple[node,loc] current = <x, location>;
-				bool member = isMemberOfClones(current);
-				if (member) {
-					subCloneClasses += x;
-				}
+			} else {
+				//iprintln("SAME TREE");
+				int a;
 			}
 		}
 	}

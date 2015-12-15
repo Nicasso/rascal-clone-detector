@@ -7,6 +7,7 @@ import lang::java::jdt::m3::Core;
 import lang::java::jdt::m3::AST;
 import lang::java::m3::AST;
 import lang::java::m3::Core;
+import Config;
 
 
 public test bool testSimilarity() {
@@ -80,6 +81,108 @@ public test bool testRemoveSymmetricPairs() {
 	complementBucket += [<<node1, defaultLocation>, <node2, defaultLocation>>,<<node2, defaultLocation>, <node1, defaultLocation>>];
 	
 	if (size(removeSymmetricPairs(complementBucket)) == 1) {
+		return true;
+	}
+	return false;
+}
+
+public test bool testType1() {
+	currentProject = |project://TestProject|;
+	currentProject2 = |file://C:/Users/Nico/workspace/TestProject/|;
+	
+	set[loc] expectedPairs = {
+	|file:///C:/Users/Nico/workspace/TestProject/src/Test.java|(98,127,<9,21>,<19,2>),
+	|file:///C:/Users/Nico/workspace/TestProject/src/Test.java|(251,127,<21,21>,<31,2>)
+	};
+	
+	main(1);
+	
+	int countingPairs = 0;
+	set[loc] clonePairsPerClass = {};
+	for (currentClass <- cloneClasses) {
+		for (currentClone <- cloneClasses[currentClass]) {
+			clonePairsPerClass += currentClone[0][1];
+			clonePairsPerClass += currentClone[1][1];
+			countingPairs += 1;
+		}
+	}
+	
+	bool good = true;
+	for (uniqueClone <- clonePairsPerClass) {
+		if(uniqueClone notin expectedPairs) {
+			good = false;
+		}
+	}
+		
+	if(countingPairs == 1 && good == true) {
+		return true;
+	}
+	return false;
+}
+
+public test bool testType2() {
+	currentProject = |project://TestProject2|;
+	currentProject2 = |file://C:/Users/Nico/workspace/TestProject2/|;
+	
+	set[loc] expectedPairs = {
+	|file:///C:/Users/Nico/workspace/TestProject2/src/Test.java|(98,127,<9,21>,<19,2>),
+	|file:///C:/Users/Nico/workspace/TestProject2:/src/Test.java|(251,127,<21,21>,<31,2>)
+	};
+	
+	main(2);
+	
+	int countingPairs = 0;
+	set[loc] clonePairsPerClass = {};
+	for (currentClass <- cloneClasses) {
+		for (currentClone <- cloneClasses[currentClass]) {
+			clonePairsPerClass += currentClone[0][1];
+			clonePairsPerClass += currentClone[1][1];
+			countingPairs += 1;
+		}
+	}
+	
+	bool good = true;
+	for (uniqueClone <- clonePairsPerClass) {
+		if(uniqueClone notin expectedPairs) {
+			good = false;
+		}
+	}
+		
+	if(countingPairs == 1 && good == true) {
+		return true;
+	}
+	return false;
+}
+
+public test bool testType2() {
+	currentProject = |project://TestProject2|;
+	currentProject2 = |file://C:/Users/Nico/workspace/TestProject2/|;
+	
+	set[loc] expectedPairs = {
+	|file:///C:/Users/Nico/workspace/TestProject2/src/Test.java|(98,127,<9,21>,<19,2>),
+	|file:///C:/Users/Nico/workspace/TestProject2:/src/Test.java|(251,127,<21,21>,<31,2>)
+	};
+	
+	main(3);
+	
+	int countingPairs = 0;
+	set[loc] clonePairsPerClass = {};
+	for (currentClass <- cloneClasses) {
+		for (currentClone <- cloneClasses[currentClass]) {
+			clonePairsPerClass += currentClone[0][1];
+			clonePairsPerClass += currentClone[1][1];
+			countingPairs += 1;
+		}
+	}
+	
+	bool good = true;
+	for (uniqueClone <- clonePairsPerClass) {
+		if(uniqueClone notin expectedPairs) {
+			good = false;
+		}
+	}
+		
+	if(countingPairs == 1 && good == true) {
 		return true;
 	}
 	return false;

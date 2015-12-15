@@ -143,11 +143,8 @@ public void main(int cloneT) {
 	allFiles = getAllJavaFiles();
 
 	fileInformation = transfer(cloneClasses, allFiles);
-	
-
 }
 
-// @TODO CHECK IF THIS IS NOT TOO MUCH!
 // Normalize all variable types of the leaves in a tree.
 public node normalizeNodeDec(node ast) {
 	return visit (ast) {
@@ -202,42 +199,29 @@ public void printCloneResults() {
 }
 
 public void checkForInnerClones(tuple[node,loc] tree) {
-	//iprintln("checkForInnerClones");
-	//iprintln(tree[1]);
 	visit (tree[0]) {
 		case node x: {
-			//iprintln("CHECK THIS NODE");
 			// Only if the tree is not equal to itself, and has a certain mass.
-			if(x != tree[0]) {
+			if (x != tree[0]) {
 				if (calculateMass(x) >= massThreshold) {
-					//iprintln("WOOT");
 					loc location = getLocationOfNode(x);
-					//iprintln(location);
 					bool doIt = true;
 					if (location == currentProject) {
-						//iprintln("SAME LOCATION");
 						doIt = false;
-					} else {
-						if (minimumCloneSizeCheck(location) == false) {
-							//iprintln("MINIMUM SIZE CHECK");
-							doIt = false;
-						}
 					}
-					if(doIt) {
+					if (doIt) {
 						tuple[node,loc] current = <x, location>;
-						//iprintln(location);
 						bool member = isMemberOfClones(current);
+						
 						if (member) {
-							subCloneClasses += x;
+							if(cloneType == 1) {
+								subCloneClasses += x;
+							} else {
+								subCloneClasses += normalizeNodeDec(x);
+							}
 						}
 					}
-				} else {
-					//iprintln("NOT ENOUGH MASS");
-					int a;
 				}
-			} else {
-				//iprintln("SAME TREE");
-				int a;
 			}
 		}
 	}
@@ -249,9 +233,9 @@ public bool isMemberOfClones(tuple[node,loc] current) {
 		for (currentPair <- cloneClasses[currentcloneClass]) {
 			if ((current[1] <= currentPair[0][1] && currentPair[0][0] == current[0]) || (current[1] <= currentPair[1][1] && currentPair[1][0] == current[0])) {
 				if (cloneClasses[current[0]]?) {
-					//if (size(cloneClasses[current[0]]) == size(cloneClasses[currentcloneClass])) {
+					if (size(cloneClasses[current[0]]) == size(cloneClasses[currentcloneClass])) {
 						return true;
-					//}
+					}
 				}
 			} 
 		}
@@ -345,7 +329,6 @@ public void addSubTreeToMap(node key, node subTree) {
 		node bestKeyMatch;
 		num highestSimilarity = 0;
 		for (buck <- buckets) {
-			//iprintln("<i>/<totalB>");
 			i += 1;
 			num currentSimilarity = calculateSimilarity(buck, key);
 			if (currentSimilarity >= similarityThreshold && currentSimilarity > highestSimilarity) {
@@ -363,22 +346,15 @@ public void addSubTreeToMap(node key, node subTree) {
 		if(cloneType == 3) {
 			bool doIt = true;
 			for (clonePair <- buckets[key]) {
-				//iprintln(location);
-				//iprintln(clonePair[1]);
-				//iprintln(location < clonePair[1]);
-				//iprintln("-----");
 				if (location < clonePair[1]) {
-					//iprintln("WOOT");
 					doIt = false;
 					break;
 				} else if (clonePair[1] < location) {
-					//iprintln("DHUSAUDIOASJDIOASOJDPASK");
 					buckets[key] = buckets[key] - clonePair; 
 				}
 			}
 		
 			if (doIt == true) {
-				//iprintln("DOIT!");
 				buckets[key] += <subTree,location>;
 			}
 		} else {
@@ -441,27 +417,6 @@ public lrel[loc,int, real,set[loc]] transfer(map[node, lrel[tuple[node,loc],tupl
 		result += <file, linesOfFile, percentage, clones>; 
 	}
 	return result;
-	//set[set[loc]] allClones = {
-	//	{
-	//		*{clonePair[0][1], clonePair[1][1]}
-	//	|
-	//		clonePair <- cloneClasses[cloneClass]
-	//	}
-	//|
-	//	cloneClass <- cloneClasses
-	//};
-	//for(cloneClass <- allClones){
-	//	lrel[loc,int,loc,int] temp = [];
-	//		for(location <- cloneClass){
-	//			 //<location of clone,
-	//			 // number of lines for the clone,
-	//			 // location of it's parent,
-	//			 // number of lines for the parent>
-	//			loc parent = toLocation(location.uri); 
-	//			temp += <location, computeLOC(location), parent, computeLOC(parent)>;	 
-	//		}
-	//	result += [temp];
-	//}
 }
 
 public list[loc] getAllJavaFiles() {
